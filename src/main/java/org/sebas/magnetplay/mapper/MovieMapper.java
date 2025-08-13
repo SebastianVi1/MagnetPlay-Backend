@@ -13,7 +13,6 @@ public class MovieMapper {
         movieDto.setName(model.getName());
         movieDto.setDescription(model.getDescription());
         movieDto.setImageUri(model.getImageUri());
-        movieDto.setMagnetUri(model.getMagnetUri());
         return movieDto;
     }
 
@@ -24,7 +23,6 @@ public class MovieMapper {
         model.setId(dto.getId());
         model.setName(dto.getName());
         model.setDescription(dto.getDescription());
-        model.setMagnetUri(dto.getMagnetUri());
         model.setImageUri(dto.getImageUri());
 
         return model;

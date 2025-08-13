@@ -16,6 +16,5 @@ public class MovieDto {
     private String name;
     private String description;
     private String imageUri;
-    private String magnetUri;
 
 }
