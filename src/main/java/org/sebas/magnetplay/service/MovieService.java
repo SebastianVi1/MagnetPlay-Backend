@@ -1,8 +1,10 @@
 package org.sebas.magnetplay.service;
 
+import org.sebas.magnetplay.dto.ErrorResponseDto;
 import org.sebas.magnetplay.dto.MovieDto;
+import org.sebas.magnetplay.exceptions.MovieNotFoundException;
 import org.sebas.magnetplay.mapper.MovieMapper;
-import org.sebas.magnetplay.model.MovieModel;
+import org.sebas.magnetplay.model.Movie;
 import org.sebas.magnetplay.repo.MovieRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,7 +13,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
+
 
 @Service
 public class MovieService {
@@ -26,7 +29,7 @@ public class MovieService {
     }
 
     public ResponseEntity<List<MovieDto>> getMovies(){
-        List<MovieModel> movieList = repo.findAll();
+        List<Movie> movieList = repo.findAll();
         List<MovieDto> movieDtos = new ArrayList<MovieDto>();
 
         movieDtos = movieList.stream()
@@ -34,5 +37,13 @@ public class MovieService {
                 .toList();
         return new ResponseEntity<List<MovieDto>>(movieDtos, HttpStatus.OK);
 
+    }
+
+    public ResponseEntity<MovieDto> getMovieById(Long id) {
+        Optional<Movie> movie = repo.findById(id);
+        if (movie.isEmpty()){
+            throw new MovieNotFoundException("Movie with the id: %d not found".formatted(id));
+        }
+        return new ResponseEntity<MovieDto>(mapper.toDto(movie.get()), HttpStatus.OK);
     }
 }

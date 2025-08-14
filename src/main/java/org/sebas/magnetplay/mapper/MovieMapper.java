@@ -1,13 +1,13 @@
 package org.sebas.magnetplay.mapper;
 
 import org.sebas.magnetplay.dto.MovieDto;
-import org.sebas.magnetplay.model.MovieModel;
+import org.sebas.magnetplay.model.Movie;
 import org.springframework.stereotype.Component;
 
 @Component
 public class MovieMapper {
     //Convert entity to Dto for public use
-    public MovieDto toDto(MovieModel model){
+    public MovieDto toDto(Movie model){
         MovieDto movieDto = new MovieDto();
         movieDto.setId(model.getId());
         movieDto.setName(model.getName());
@@ -17,9 +17,9 @@ public class MovieMapper {
     }
 
     //Convert dto to entity
-    public MovieModel toModel(MovieDto dto){
+    public Movie toModel(MovieDto dto){
 
-        MovieModel model = new MovieModel();
+        Movie model = new Movie();
         model.setId(dto.getId());
         model.setName(dto.getName());
         model.setDescription(dto.getDescription());

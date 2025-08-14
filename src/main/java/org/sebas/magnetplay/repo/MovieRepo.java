@@ -1,7 +1,7 @@
 package org.sebas.magnetplay.repo;
 
-import org.sebas.magnetplay.model.MovieModel;
+import org.sebas.magnetplay.model.Movie;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface MovieRepo extends JpaRepository<MovieModel, Long> {
+public interface MovieRepo extends JpaRepository<Movie, Long> {
 }

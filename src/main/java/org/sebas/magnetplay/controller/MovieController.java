@@ -1,13 +1,13 @@
 package org.sebas.magnetplay.controller;
 
+import org.apache.coyote.Response;
 import org.sebas.magnetplay.dto.MovieDto;
+import org.sebas.magnetplay.exceptions.MovieNotFoundException;
 import org.sebas.magnetplay.service.MovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -23,8 +23,15 @@ public class MovieController {
         this.movieService = movieService;
     }
 
-    @GetMapping("/movies")
+    @GetMapping("/movie")
     public ResponseEntity<List<MovieDto>> getMovies(){
         return movieService.getMovies();
     }
+
+    @GetMapping("/movie/{movieId}")
+    public ResponseEntity<?> getMovieById(@PathVariable Long movieId){ // return MovieDto if succes else ErrorResponse
+        return movieService.getMovieById(movieId);
+    }
+
+
 }
