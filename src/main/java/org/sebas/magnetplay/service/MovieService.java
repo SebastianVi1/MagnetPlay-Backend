@@ -2,6 +2,7 @@ package org.sebas.magnetplay.service;
 
 import org.sebas.magnetplay.dto.ErrorResponseDto;
 import org.sebas.magnetplay.dto.MovieDto;
+import org.sebas.magnetplay.exceptions.InvalidDataException;
 import org.sebas.magnetplay.exceptions.MovieNotFoundException;
 import org.sebas.magnetplay.mapper.MovieMapper;
 import org.sebas.magnetplay.model.Movie;
@@ -46,4 +47,16 @@ public class MovieService {
         }
         return new ResponseEntity<MovieDto>(mapper.toDto(movie.get()), HttpStatus.OK);
     }
+
+    public ResponseEntity<MovieDto> createMovie(MovieDto movieDto){
+        if (movieDto == null){
+            throw new InvalidDataException("Movie cannot be null");
+        }
+        Movie movie = repo.save(mapper.toModel(movieDto));
+
+        return new ResponseEntity<>(mapper.toDto(movie), HttpStatus.CREATED);
+
+
+    }
+
 }

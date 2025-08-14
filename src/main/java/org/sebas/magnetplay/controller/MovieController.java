@@ -1,12 +1,10 @@
 package org.sebas.magnetplay.controller;
 
-import org.apache.coyote.Response;
+import jakarta.validation.Valid;
 import org.sebas.magnetplay.dto.MovieDto;
-import org.sebas.magnetplay.exceptions.MovieNotFoundException;
 import org.sebas.magnetplay.service.MovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,21 +14,26 @@ import java.util.List;
 public class MovieController {
 
 
-    private MovieService movieService;
+    private MovieService service;
 
     @Autowired
     public MovieController(MovieService movieService){
-        this.movieService = movieService;
+        this.service = movieService;
     }
 
-    @GetMapping("/movie")
+    @GetMapping("/movies")
     public ResponseEntity<List<MovieDto>> getMovies(){
-        return movieService.getMovies();
+        return service.getMovies();
     }
 
-    @GetMapping("/movie/{movieId}")
+    @GetMapping("/movies/{movieId}")
     public ResponseEntity<?> getMovieById(@PathVariable Long movieId){ // return MovieDto if succes else ErrorResponse
-        return movieService.getMovieById(movieId);
+        return service.getMovieById(movieId);
+    }
+
+    @PostMapping("/movies")
+    public ResponseEntity<?> createMovie(@Valid @RequestBody  MovieDto movieDto){
+        return service.createMovie(movieDto);
     }
 
 

@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.sebas.magnetplay.dto.MovieDto;
+import org.sebas.magnetplay.exceptions.InvalidDataException;
 import org.sebas.magnetplay.exceptions.MovieNotFoundException;
 import org.sebas.magnetplay.mapper.MovieMapper;
 import org.sebas.magnetplay.model.Movie;
@@ -99,7 +100,33 @@ public class MovieServiceTest {
 
         verify(repo).findById(2222L);
 
+    }
 
+    @Test
+    void shouldAddAMovie(){
+        //Given
+        when(repo.save(any(Movie.class))).thenReturn(testMovie);
+        when(mapper.toModel(testMovieDto)).thenReturn(testMovie);
+        when(mapper.toDto(testMovie)).thenReturn(testMovieDto);
+        //When
+        var result = service.createMovie(testMovieDto);
+
+        //Then
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        assertThat(result.getBody().getName())
+                .isNotNull();
+        assertThat(result.getBody().getName())
+                .isEqualTo("Avengers Dto");
+
+        verify(repo).save(testMovie);
+    }
+
+    @Test
+    void shouldThrowInvalidDataExceptionWhenMovieIsNull() {
+        assertThatThrownBy(() -> service.createMovie(null))
+                .isInstanceOf(InvalidDataException.class)
+                .hasMessage("Movie cannot be null");
     }
 
 }

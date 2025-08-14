@@ -9,11 +9,12 @@ public class ErrorResponseDto {
     private String message;
     private LocalDateTime timestamp;
     private String details;
-
-    public ErrorResponseDto(String message, String details){
+    private int status;
+    public ErrorResponseDto(String message, String details, int status){
         this.message = message;
         this.timestamp = LocalDateTime.now();
         this.details = details;
+        this.status = status;
     }
 
 }
