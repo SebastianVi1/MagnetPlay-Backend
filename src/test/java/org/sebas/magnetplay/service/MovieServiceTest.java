@@ -14,6 +14,7 @@ import org.sebas.magnetplay.mapper.MovieMapper;
 import org.sebas.magnetplay.model.Movie;
 import org.sebas.magnetplay.repo.MovieRepo;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Objects;
@@ -165,6 +166,24 @@ public class MovieServiceTest {
                 .hasMessage("Movie with the id: 9999 not found");
 
         verify(repo).findById(9999L);
+    }
+
+    @Test
+    void shouldDeleteAExistentMovieWithStatusOK200(){
+        //Given
+        when(repo.findById(1L)).thenReturn(Optional.of(testMovie));
+
+        //When
+        ResponseEntity<?> result = service.deleteMovie(1L);
+
+        assertThat(result.getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody())
+                .isEqualTo("Movie Avengers deleted");
+
+        verify(repo).findById(1L);
+
+        verify(repo).delete(any(Movie.class));
     }
 
 }

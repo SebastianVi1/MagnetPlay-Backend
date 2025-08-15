@@ -68,4 +68,14 @@ public class MovieService {
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
+    public ResponseEntity<?> deleteMovie(Long id){
+        Optional<Movie> movieOptional = repo.findById(id);
+        if (movieOptional.isEmpty()){
+            throw new MovieNotFoundException("Movie with the id: %d not found".formatted(id));
+        }
+        Movie movie = movieOptional.get();
+        repo.delete(movie);
+
+        return new ResponseEntity<>("Movie %s deleted".formatted(movie.getName()), HttpStatus.OK);
+    }
 }

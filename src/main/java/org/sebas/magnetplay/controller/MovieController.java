@@ -42,5 +42,10 @@ public class MovieController {
         return service.updateMovie(movieId, updatedMovie);
     }
 
+    @DeleteMapping("/movies/{movieId}")
+    public ResponseEntity<?> deleteMovie(@RequestParam Long movieId){
+        return service.deleteMovie(movieId);
+    }
+
 
 }
