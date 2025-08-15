@@ -55,8 +55,17 @@ public class MovieService {
         Movie movie = repo.save(mapper.toModel(movieDto));
 
         return new ResponseEntity<>(mapper.toDto(movie), HttpStatus.CREATED);
+    }
 
+    public ResponseEntity<?> updateMovie(Long movieId, MovieDto updatedMovie){
+        if (repo.findById(movieId).isEmpty()){
+            throw new MovieNotFoundException("Movie with the id: %d not found".formatted(movieId));
+        }
+        MovieDto result = mapper.toDto(
+                repo.save(mapper.toModel(updatedMovie))
+        );
 
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
 }

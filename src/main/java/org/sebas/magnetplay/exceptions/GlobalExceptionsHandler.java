@@ -14,7 +14,7 @@ public class GlobalExceptionsHandler {
     public ResponseEntity<?> handleMovieNotFoundException(MovieNotFoundException exception) {
         ErrorResponseDto movieNotFound = new ErrorResponseDto(
                 exception.getMessage(),
-                "Movie not found",
+                "Resource Not Found Exception",
                 HttpStatus.NOT_FOUND.value()
         );
         return new ResponseEntity<>(movieNotFound, HttpStatus.NOT_FOUND);

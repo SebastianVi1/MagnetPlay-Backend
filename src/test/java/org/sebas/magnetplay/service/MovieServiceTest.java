@@ -1,5 +1,6 @@
 package org.sebas.magnetplay.service;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +21,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -127,6 +129,42 @@ public class MovieServiceTest {
         assertThatThrownBy(() -> service.createMovie(null))
                 .isInstanceOf(InvalidDataException.class)
                 .hasMessage("Movie cannot be null");
+    }
+
+    @Test
+    void shouldUpdateAMovieWithStatusOK200(){
+        //Given
+        when(repo.findById(1L)).thenReturn(Optional.of(testMovie));
+        when(mapper.toDto(testMovie)).thenReturn(testMovieDto);
+        when(mapper.toModel(testMovieDto)).thenReturn(testMovie);
+        when(repo.save(any(Movie.class))).thenReturn(testMovie);
+
+        //When
+        var result = service.updateMovie(1L, testMovieDto);
+
+        //Then
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        assertNotNull(result.getBody());
+        assertThat(result.getBody().getClass())
+                .isEqualTo(MovieDto.class);
+
+        verify(repo).findById(1L);
+        verify(repo).save(testMovie);
+
+    }
+
+    @Test
+    void shouldReturnAMovieNotFoundException(){
+        //Given
+        when(repo.findById(9999L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> service.updateMovie(9999L, testMovieDto))
+                .isInstanceOf(MovieNotFoundException.class)
+                .hasMessage("Movie with the id: 9999 not found");
+
+        verify(repo).findById(9999L);
     }
 
 }

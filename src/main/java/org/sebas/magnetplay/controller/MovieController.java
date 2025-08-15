@@ -36,5 +36,11 @@ public class MovieController {
         return service.createMovie(movieDto);
     }
 
+    @PutMapping("/movies/{movieId}")
+    public ResponseEntity<?> updateMovie(@RequestParam Long movieId, @RequestBody MovieDto updatedMovie){
+
+        return service.updateMovie(movieId, updatedMovie);
+    }
+
 
 }
