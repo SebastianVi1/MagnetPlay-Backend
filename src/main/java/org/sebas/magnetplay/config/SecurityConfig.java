@@ -6,6 +6,7 @@ import org.sebas.magnetplay.service.MyUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -42,8 +43,8 @@ public class SecurityConfig {
         return http
                 .csrf(customizer -> customizer.disable())
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/login").permitAll()
-                        .requestMatchers("/register").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/movies").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .defaultSuccessUrl("/api/movies")) // redirect url.. home
@@ -60,7 +61,6 @@ public class SecurityConfig {
                 .build();
 
     }
-
 
     @Bean
     public AuthenticationProvider authenticationProvider(){

@@ -5,6 +5,7 @@ import org.sebas.magnetplay.dto.MovieDto;
 import org.sebas.magnetplay.service.MovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,27 +26,29 @@ public class MovieController {
     public ResponseEntity<List<MovieDto>> getMovies(){
         return service.getMovies();
     }
-
+    @PreAuthorize("hasAnyRole('USER, ADMIN')")
     @GetMapping("/movies/{movieId}")
     public ResponseEntity<?> getMovieById(@PathVariable Long movieId){ // return MovieDto if succes else ErrorResponse
         return service.getMovieById(movieId);
     }
 
     @PostMapping("/movies")
-    public ResponseEntity<?> createMovie(@Valid @RequestBody  MovieDto movieDto){
+    @PreAuthorize("hasRole('ADMIN')")
+   public ResponseEntity<?> createMovie(@Valid @RequestBody  MovieDto movieDto){
         return service.createMovie(movieDto);
     }
 
     @PutMapping("/movies/{movieId}")
-    public ResponseEntity<?> updateMovie(@RequestParam Long movieId, @RequestBody MovieDto updatedMovie){
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateMovie(@Valid @PathVariable Long movieId, @RequestBody @Valid MovieDto updatedMovie){
 
         return service.updateMovie(movieId, updatedMovie);
     }
 
     @DeleteMapping("/movies/{movieId}")
-    public ResponseEntity<?> deleteMovie(@RequestParam Long movieId){
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteMovie(@PathVariable Long movieId){
         return service.deleteMovie(movieId);
     }
-
 
 }
