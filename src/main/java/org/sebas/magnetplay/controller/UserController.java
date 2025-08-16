@@ -26,4 +26,7 @@ public class UserController {
     public String login(@RequestBody Users user){
         return service.verify(user);
     }
+
+
+    // Use http://localhost:8080/api/auth/login/oauth/code/google to use oauth2
 }
