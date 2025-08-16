@@ -1,7 +1,10 @@
 package org.sebas.magnetplay.init;
 
 import org.sebas.magnetplay.model.Role;
+import org.sebas.magnetplay.model.Users;
 import org.sebas.magnetplay.repo.RoleRepo;
+import org.sebas.magnetplay.repo.UsersRepo;
+import org.sebas.magnetplay.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -15,6 +18,13 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private RoleRepo roleRepository;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private UsersRepo userRepo;
+
 
     @Override
     public void run(String... args) throws Exception {
@@ -31,5 +41,14 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         System.out.println("Roles initialized");
+
+
+        if(userRepo.findByUsername("admin") == null){
+            Users admin = new Users();
+            admin.setUsername("admin");
+            admin.setPassword("admin123");
+            userService.registerNewAdminUser(admin);
+            System.out.println("Default admin user added, use admin and admin123 as password");
+        }
     }
 }

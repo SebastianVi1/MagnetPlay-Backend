@@ -27,6 +27,7 @@ public class UserService {
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     AuthenticationManager authManager;
+
     @Autowired
     public UserService(UsersRepo usersRepo, AuthenticationManager authManager, JWTService jwtService, RoleRepo roleRepo){
         this.jwtService = jwtService;
