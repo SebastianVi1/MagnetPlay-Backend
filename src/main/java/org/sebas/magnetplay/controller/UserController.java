@@ -1,6 +1,7 @@
 package org.sebas.magnetplay.controller;
 
 import jakarta.validation.Valid;
+import org.sebas.magnetplay.dto.UserDto;
 import org.sebas.magnetplay.model.Users;
 import org.sebas.magnetplay.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public Users registerNewUser(@RequestBody Users user) {
+    public ResponseEntity<UserDto> registerNewUser(@RequestBody UserDto user) {
         return service.registerNewUser(user);
 
     }
@@ -33,7 +34,7 @@ public class UserController {
 
     @PostMapping("/register/admin")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Users> logi(@RequestBody @Valid Users user){
+    public ResponseEntity<UserDto> logi(@RequestBody @Valid UserDto user){
         return service.registerNewAdminUser(user);
     }
 

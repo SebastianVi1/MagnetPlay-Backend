@@ -1,5 +1,6 @@
 package org.sebas.magnetplay.init;
 
+import org.sebas.magnetplay.dto.UserDto;
 import org.sebas.magnetplay.model.Role;
 import org.sebas.magnetplay.model.Users;
 import org.sebas.magnetplay.repo.RoleRepo;
@@ -43,8 +44,8 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("Roles initialized");
 
 
-        if(userRepo.findByUsername("admin") == null){
-            Users admin = new Users();
+        if(userRepo.findAll().isEmpty()){
+            UserDto admin = new UserDto();
             admin.setUsername("admin");
             admin.setPassword("admin123");
             userService.registerNewAdminUser(admin);

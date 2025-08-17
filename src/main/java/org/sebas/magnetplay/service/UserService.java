@@ -1,5 +1,7 @@
 package org.sebas.magnetplay.service;
 
+import org.sebas.magnetplay.dto.UserDto;
+import org.sebas.magnetplay.mapper.UserMapper;
 import org.sebas.magnetplay.model.Role;
 import org.sebas.magnetplay.model.Users;
 import org.sebas.magnetplay.repo.RoleRepo;
@@ -23,28 +25,37 @@ public class UserService {
 
     private RoleRepo roleRepo;
 
+    private UserMapper userMapper;
+
     UsersRepo usersRepo;
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     AuthenticationManager authManager;
 
     @Autowired
-    public UserService(UsersRepo usersRepo, AuthenticationManager authManager, JWTService jwtService, RoleRepo roleRepo){
+    public UserService(UsersRepo usersRepo, AuthenticationManager authManager, JWTService jwtService, RoleRepo roleRepo, UserMapper userMapper){
         this.jwtService = jwtService;
         this.authManager = authManager;
         this.usersRepo = usersRepo;
         this.roleRepo = roleRepo;
+        this.userMapper = userMapper;
     }
 
 
-    public Users registerNewUser(Users user){
+    public ResponseEntity<UserDto> registerNewUser(UserDto userDto){
+        // Convert UserDto to Entity
+        Users user = userMapper.toModel(userDto);
         Role role = roleRepo.findByName("ROLE_USER").get(); //assign user rol by default
         user.setRoles(Set.of(role));
         user.setPassword(encoder.encode(user.getPassword())); // encrypt the password
-        return usersRepo.save(user);
+        //save the new user
+        user = usersRepo.save(user);
+        userDto = userMapper.toDto(user);
+        return new ResponseEntity<UserDto>(userDto, HttpStatus.CREATED);
     }
 
-    public ResponseEntity<Users> registerNewAdminUser(Users user){
+    public ResponseEntity<UserDto> registerNewAdminUser(UserDto userDto){
+        Users user = userMapper.toModel(userDto);
         List<Role> roles = roleRepo.findAll();
         user.setRoles(
                 Set.of(
@@ -54,8 +65,8 @@ public class UserService {
         );
         user.setPassword(encoder.encode(user.getPassword())); // encrypt the password
         Users userSaved =  usersRepo.save(user);
-
-        return new ResponseEntity<Users>(userSaved, HttpStatus.CREATED);
+        userDto = userMapper.toDto(userSaved);
+        return new ResponseEntity<UserDto>(userDto, HttpStatus.CREATED);
     }
 
     public String verify(Users user) {
