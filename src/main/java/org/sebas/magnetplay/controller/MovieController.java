@@ -2,6 +2,7 @@ package org.sebas.magnetplay.controller;
 
 import jakarta.validation.Valid;
 import org.sebas.magnetplay.dto.MovieDto;
+import org.sebas.magnetplay.model.MovieCategory;
 import org.sebas.magnetplay.service.MovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -26,6 +28,12 @@ public class MovieController {
     public ResponseEntity<List<MovieDto>> getMovies(){
         return service.getMovies();
     }
+
+    @GetMapping("/movies/categories")
+    public ResponseEntity<Map<MovieCategory,List<MovieDto>>> getMoviesByCategory(){
+        return service.getMoviesOrderedByCategory();
+    }
+
     @PreAuthorize("hasAnyRole('USER, ADMIN')")
     @GetMapping("/movies/{movieId}")
     public ResponseEntity<?> getMovieById(@PathVariable Long movieId){ // return MovieDto if succes else ErrorResponse

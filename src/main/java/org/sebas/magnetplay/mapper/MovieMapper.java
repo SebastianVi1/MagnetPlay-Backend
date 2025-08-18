@@ -2,10 +2,14 @@ package org.sebas.magnetplay.mapper;
 
 import org.sebas.magnetplay.dto.MovieDto;
 import org.sebas.magnetplay.model.Movie;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class MovieMapper {
+
     //Convert entity to Dto for public use
     public MovieDto toDto(Movie model){
         MovieDto movieDto = new MovieDto();
@@ -26,6 +30,11 @@ public class MovieMapper {
         model.setImageUri(dto.getImageUri());
 
         return model;
+    }
+
+    // Return a list with MovieDto
+    public List<MovieDto> toDtoLit(List<Movie> list){
+        return list.stream().map(this::toDto).toList(); // convert to all entities to dot
     }
 
 }

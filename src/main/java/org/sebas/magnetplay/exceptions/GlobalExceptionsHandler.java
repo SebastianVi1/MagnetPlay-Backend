@@ -38,4 +38,14 @@ public class GlobalExceptionsHandler {
         );
         return new ResponseEntity<>(usernameTaken, HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler
+    public ResponseEntity<?> handleCategoryNotFoundExcepiton(CategoryNotFoundException exception){
+        ErrorResponseDto usernameTaken = new ErrorResponseDto(
+                exception.getMessage(),
+                "The Category is nonexistent",
+                HttpStatus.CONFLICT.value()
+        );
+        return new ResponseEntity<>(usernameTaken, HttpStatus.CONFLICT);
+    }
 }

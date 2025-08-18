@@ -44,7 +44,7 @@ public class SecurityConfig {
                 .csrf(customizer -> customizer.disable())
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/movies").permitAll()
+                        .requestMatchers("/api/movies/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .defaultSuccessUrl("/api/movies")) // redirect url.. home
