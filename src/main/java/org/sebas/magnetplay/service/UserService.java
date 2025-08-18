@@ -1,6 +1,7 @@
 package org.sebas.magnetplay.service;
 
 import org.sebas.magnetplay.dto.UserDto;
+import org.sebas.magnetplay.exceptions.UsernameTakenException;
 import org.sebas.magnetplay.mapper.UserMapper;
 import org.sebas.magnetplay.model.Role;
 import org.sebas.magnetplay.model.Users;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -27,7 +29,8 @@ public class UserService {
 
     private UserMapper userMapper;
 
-    UsersRepo usersRepo;
+    private UsersRepo usersRepo;
+
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     AuthenticationManager authManager;
@@ -43,8 +46,15 @@ public class UserService {
 
 
     public ResponseEntity<UserDto> registerNewUser(UserDto userDto){
+
         // Convert UserDto to Entity
         Users user = userMapper.toModel(userDto);
+
+        // Verify if the username exists
+        if (usersRepo.findByUsername(user.getUsername()) != null){
+            throw new UsernameTakenException("The username: %s is already in use".formatted(user.getUsername()));
+        }
+
         Role role = roleRepo.findByName("ROLE_USER").get(); //assign user rol by default
         user.setRoles(Set.of(role));
         user.setPassword(encoder.encode(user.getPassword())); // encrypt the password
@@ -56,6 +66,10 @@ public class UserService {
 
     public ResponseEntity<UserDto> registerNewAdminUser(UserDto userDto){
         Users user = userMapper.toModel(userDto);
+        // Verify if the username exists
+        if (usersRepo.findByUsername(user.getUsername()) != null){
+            throw new UsernameTakenException("The username: %s is already in use".formatted(user.getUsername()));
+        }
         List<Role> roles = roleRepo.findAll();
         user.setRoles(
                 Set.of(
@@ -65,17 +79,17 @@ public class UserService {
         );
         user.setPassword(encoder.encode(user.getPassword())); // encrypt the password
         Users userSaved =  usersRepo.save(user);
-        userDto = userMapper.toDto(userSaved);
-        return new ResponseEntity<UserDto>(userDto, HttpStatus.CREATED);
+        UserDto savedUserDto = userMapper.toDto(userSaved);
+        return new ResponseEntity<UserDto>(savedUserDto, HttpStatus.CREATED);
     }
 
-    public String verify(Users user) {
+    public String verifyUser(UserDto user) {
         Authentication authentication =
-            authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
+                authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
 
         if (authentication.isAuthenticated()){
             return jwtService.generateToken(user.getUsername());
         }
-        return "Fail";
+        throw new BadCredentialsException("The autentication failed");
     }
 }

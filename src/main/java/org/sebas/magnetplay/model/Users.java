@@ -29,6 +29,8 @@ public class Users {
     @Column(name = "password")
     private String password;
 
+    private boolean isEnabled = true;
+
     @ManyToMany(fetch = FetchType.EAGER) // The data is loaded with the entity
     @JoinTable(
             name = "users_roles",

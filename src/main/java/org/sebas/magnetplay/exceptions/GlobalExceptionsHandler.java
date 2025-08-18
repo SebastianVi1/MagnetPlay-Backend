@@ -1,7 +1,6 @@
 package org.sebas.magnetplay.exceptions;
 
 import org.sebas.magnetplay.dto.ErrorResponseDto;
-import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,5 +27,15 @@ public class GlobalExceptionsHandler {
                 HttpStatus.BAD_REQUEST.value()
         );
         return new ResponseEntity<>(invalidData, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(UsernameTakenException.class)
+    public ResponseEntity<?> handleUsernameTakenException(UsernameTakenException exception){
+        ErrorResponseDto usernameTaken = new ErrorResponseDto(
+                exception.getMessage(),
+                "The username is already in use",
+                HttpStatus.CONFLICT.value()
+        );
+        return new ResponseEntity<>(usernameTaken, HttpStatus.CONFLICT);
     }
 }

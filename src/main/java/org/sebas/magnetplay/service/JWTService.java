@@ -4,12 +4,14 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.sebas.magnetplay.model.Users;
+import org.sebas.magnetplay.repo.UsersRepo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Date;
@@ -20,14 +22,28 @@ import java.util.function.Function;
 @Service
 public class JWTService {
     private String secretKey = "";
+    private UsersRepo usersRepo;
 
-    public JWTService() throws NoSuchAlgorithmException {
+    //Constructor
+    // @Autowired
+    public JWTService(UsersRepo usersRepo) throws NoSuchAlgorithmException {
+        this.usersRepo = usersRepo;
         KeyGenerator keyGen = KeyGenerator.getInstance("HmacSHA256");
         SecretKey sk = keyGen.generateKey();
         secretKey = Base64.getEncoder().encodeToString(sk.getEncoded());
     }
+
+    // Generate jwt token
     public String generateToken(String username){
         Map<String, Object> claims = new HashMap<>();
+        /*
+        Add info to the claims so the token can store data without db
+        At this point we know the user is existent in the db
+        */
+        Users user= usersRepo.findByUsername(username);
+        claims.put("userId", user.getId());
+        claims.put("roles", user.getRoles());
+        claims.put("isUserEnabled", user.isEnabled());
 
         return Jwts.builder()
                 .claims()
