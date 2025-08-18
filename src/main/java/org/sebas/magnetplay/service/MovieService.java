@@ -41,7 +41,8 @@ public class MovieService {
 
     public ResponseEntity<Map<MovieCategory,List<MovieDto>>> getMoviesOrderedByCategory() throws CategoryNotFoundException {
 
-       List<MovieDto> fetchMovies = mapper.toDtoLit(repo.findAll());
+       List<MovieDto> fetchMovies = mapper.toDtoList(repo.findAll());
+        System.out.println(fetchMovies);
 
         EnumMap<MovieCategory, List<MovieDto>> filteredMovies = new EnumMap<MovieCategory,List<MovieDto>>(MovieCategory.class);
         filteredMovies.put(MovieCategory.ACTION, new ArrayList<MovieDto>());

@@ -17,6 +17,7 @@ public class MovieMapper {
         movieDto.setName(model.getName());
         movieDto.setDescription(model.getDescription());
         movieDto.setImageUri(model.getImageUri());
+        movieDto.setCategories(model.getCategories());
         return movieDto;
     }
 
@@ -28,12 +29,13 @@ public class MovieMapper {
         model.setName(dto.getName());
         model.setDescription(dto.getDescription());
         model.setImageUri(dto.getImageUri());
+        model.setCategories(dto.getCategories());
 
         return model;
     }
 
     // Return a list with MovieDto
-    public List<MovieDto> toDtoLit(List<Movie> list){
+    public List<MovieDto> toDtoList(List<Movie> list){
         return list.stream().map(this::toDto).toList(); // convert to all entities to dot
     }
 
