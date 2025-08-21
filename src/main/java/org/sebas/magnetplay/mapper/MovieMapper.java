@@ -23,6 +23,7 @@ public class MovieMapper {
         movieDto.setMagnetUri(model.getMagnet());
         movieDto.setScreenshot(model.getScreenshot());
         movieDto.setPosterUri(model.getPoster());
+        movieDto.setCategory(model.getCategory());
         return movieDto;
     }
 
@@ -38,6 +39,7 @@ public class MovieMapper {
         model.setHash(dto.getHash());
         model.setPoster(dto.getPosterUri());
         model.setMagnet(dto.getMagnetUri());
+        model.setCategory(dto.getCategory());
 
         return model;
     }

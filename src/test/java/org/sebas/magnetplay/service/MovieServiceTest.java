@@ -12,7 +12,6 @@ import org.sebas.magnetplay.exceptions.InvalidDataException;
 import org.sebas.magnetplay.exceptions.MovieNotFoundException;
 import org.sebas.magnetplay.mapper.MovieMapper;
 import org.sebas.magnetplay.model.Movie;
-import org.sebas.magnetplay.model.MovieCategory;
 import org.sebas.magnetplay.repo.MovieRepo;
 import org.springframework.http.HttpStatus;
 

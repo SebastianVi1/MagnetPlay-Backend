@@ -2,12 +2,10 @@ package org.sebas.magnetplay.service;
 
 import org.sebas.magnetplay.dto.MovieDto;
 import org.sebas.magnetplay.dto.TorrentMovieDto;
-import org.sebas.magnetplay.exceptions.CategoryNotFoundException;
 import org.sebas.magnetplay.exceptions.InvalidDataException;
 import org.sebas.magnetplay.exceptions.MovieNotFoundException;
 import org.sebas.magnetplay.mapper.MovieMapper;
 import org.sebas.magnetplay.model.Movie;
-import org.sebas.magnetplay.model.MovieCategory;
 import org.sebas.magnetplay.repo.MovieRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -40,36 +38,6 @@ public class MovieService {
         return new ResponseEntity<List<MovieDto>>(movieDtos, HttpStatus.OK);
 
     }
-
-//    public ResponseEntity<Map<MovieCategory,List<MovieDto>>> getMoviesOrderedByCategory() throws CategoryNotFoundException {
-//
-//       List<MovieDto> fetchMovies = mapper.toDtoList(repo.findAll());
-//        System.out.println(fetchMovies);
-//
-//        EnumMap<MovieCategory, List<MovieDto>> filteredMovies = new EnumMap<MovieCategory,List<MovieDto>>(MovieCategory.class);
-//        filteredMovies.put(MovieCategory.ACTION, new ArrayList<MovieDto>());
-//        filteredMovies.put(MovieCategory.COMEDY, new ArrayList<MovieDto>());
-//        filteredMovies.put(MovieCategory.HORROR, new ArrayList<MovieDto>());
-//        filteredMovies.put(MovieCategory.ROMANCE, new ArrayList<MovieDto>());
-//        filteredMovies.put(MovieCategory.FICTION, new ArrayList<MovieDto>());
-//
-//       for (MovieDto movie : fetchMovies){
-//           for (MovieCategory category: movie.getCategories()){
-//               switch (category){
-//                   case ACTION -> filteredMovies.get(MovieCategory.ACTION).add(movie);
-//                   case COMEDY -> filteredMovies.get(MovieCategory.COMEDY).add(movie);
-//                   case HORROR -> filteredMovies.get(MovieCategory.HORROR).add(movie);
-//                   case ROMANCE -> filteredMovies.get(MovieCategory.ROMANCE).add(movie);
-//                   case FICTION -> filteredMovies.get(MovieCategory.FICTION).add(movie);
-//                   default -> throw new CategoryNotFoundException("The category is nonexistent");
-//               }
-//           }
-//       }
-//
-//        return new ResponseEntity<>(filteredMovies, HttpStatus.OK);
-//
-
-//    }
 
 
     public ResponseEntity<MovieDto> getMovieById(Long id) {
@@ -122,6 +90,33 @@ public class MovieService {
     }
 
     public ResponseEntity<?> getRecentMovies() {
-        return+
+    return null;
     }
+
+    public ResponseEntity<Map<String,List<MovieDto>>> getOrderedByCategory(){
+        List<MovieDto> movieList = mapper.toDtoList(repo.findAll());
+
+        HashSet<String> categories = new HashSet<>();
+        HashMap<String, List<MovieDto>> categoryMap = new HashMap<>();
+
+        for (MovieDto movie : movieList){
+            if (movie.getCategory() == null){
+                System.out.println(movie.getCategory());
+                continue;
+            }
+            categories.add(movie.getCategory());
+        }
+        for (String category: categories){
+            categoryMap.put(category, new ArrayList<>());
+        }
+       for (MovieDto movie : movieList){
+           for (String category : categoryMap.keySet()){
+               if( category.equals(movie.getCategory())){
+                   categoryMap.get(category).add(movie);
+               }
+           }
+       }
+       return new ResponseEntity<>(categoryMap, HttpStatus.OK);
+    }
+
 }

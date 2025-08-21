@@ -21,8 +21,8 @@ public class TorrentScrapper implements CommandLineRunner {
     private final RestTemplate restTemplate = new RestTemplate();
 
     private String url = "http://localhost:8009";
-
-    private String site = "1337x";
+    private String category = "movies";
+    private String site = "all";
 
     @Autowired
     private MovieService movieService;
@@ -36,8 +36,7 @@ public class TorrentScrapper implements CommandLineRunner {
 
 
     private String getMoviesByRecent(){
-        String result =  restTemplate.getForObject("%s/api/v1/recent/?site=%s".formatted(url, site ), String.class);
-        return result;
+        return restTemplate.getForObject("%s/api/v1/recent?site=%s&limit=200&category=%s".formatted(url, site, category ), String.class);
     }
     @Override
     public void run(String... args) throws Exception {
@@ -46,11 +45,9 @@ public class TorrentScrapper implements CommandLineRunner {
         List<TorrentMovieDto> movieList = result.getData();
         List<Movie> dbMovies = movieRepo.findAll();
 
-
         Set<String> dbHashes = dbMovies.stream() //convert the list into a set if the hash is not in the is added
                 .map(Movie::getHash)
                 .collect(Collectors.toSet());
-
         for (TorrentMovieDto movie : movieList) {
             if (dbHashes.add(movie.getHash())) {
                 movieService.createTorrentMovie(movie);

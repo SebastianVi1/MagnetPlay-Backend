@@ -2,7 +2,6 @@ package org.sebas.magnetplay.controller;
 
 import jakarta.validation.Valid;
 import org.sebas.magnetplay.dto.MovieDto;
-import org.sebas.magnetplay.model.MovieCategory;
 import org.sebas.magnetplay.service.MovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -30,10 +29,10 @@ public class MovieController {
         return service.getMovies();
     }
 
-//    @GetMapping("/movies/categories")
-//    public ResponseEntity<Map<MovieCategory,List<MovieDto>>> getMoviesByCategory(){
-//        return service.getMoviesOrderedByCategory();
-//    }
+    @GetMapping("/movies/categories")
+    public ResponseEntity<Map<String,List<MovieDto>>> getMoviesByCategory(){
+        return service.getOrderedByCategory();
+    }
 
     @GetMapping("/movies/recent")
     public ResponseEntity<?> getRecentMovies(){

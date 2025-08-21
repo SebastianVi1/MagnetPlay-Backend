@@ -1,11 +1,7 @@
 package org.sebas.magnetplay.init;
 
-import org.sebas.magnetplay.dto.MovieDto;
 import org.sebas.magnetplay.dto.UserDto;
-import org.sebas.magnetplay.model.Movie;
-import org.sebas.magnetplay.model.MovieCategory;
 import org.sebas.magnetplay.model.Role;
-import org.sebas.magnetplay.model.Users;
 import org.sebas.magnetplay.repo.MovieRepo;
 import org.sebas.magnetplay.repo.RoleRepo;
 import org.sebas.magnetplay.repo.UsersRepo;
