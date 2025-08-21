@@ -11,11 +11,12 @@ import java.util.List;
 public class MovieDto {
 
     private Long id;
-    @NotNull(message = "The name of the movie can't be null")
-    @NotBlank
     private String name;
     private String description;
-    private String imageUri;
-    private List<MovieCategory> categories = new ArrayList<>();
+    private String date;
+    private List<String> screenshot;
+    private String posterUri;
+    private String magnetUri;
+    private String hash;
 
 }

@@ -1,6 +1,8 @@
 package org.sebas.magnetplay.mapper;
 
 import org.sebas.magnetplay.dto.MovieDto;
+import org.sebas.magnetplay.dto.TorrentDataDto;
+import org.sebas.magnetplay.dto.TorrentMovieDto;
 import org.sebas.magnetplay.model.Movie;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -16,8 +18,11 @@ public class MovieMapper {
         movieDto.setId(model.getId());
         movieDto.setName(model.getName());
         movieDto.setDescription(model.getDescription());
-        movieDto.setImageUri(model.getImageUri());
-        movieDto.setCategories(model.getCategories());
+        movieDto.setDate(model.getDate());
+        movieDto.setHash(model.getHash());
+        movieDto.setMagnetUri(model.getMagnet());
+        movieDto.setScreenshot(model.getScreenshot());
+        movieDto.setPosterUri(model.getPoster());
         return movieDto;
     }
 
@@ -28,8 +33,11 @@ public class MovieMapper {
         model.setId(dto.getId());
         model.setName(dto.getName());
         model.setDescription(dto.getDescription());
-        model.setImageUri(dto.getImageUri());
-        model.setCategories(dto.getCategories());
+        model.setScreenshot(dto.getScreenshot());
+        model.setDate(dto.getDate());
+        model.setHash(dto.getHash());
+        model.setPoster(dto.getPosterUri());
+        model.setMagnet(dto.getMagnetUri());
 
         return model;
     }
@@ -37,6 +45,21 @@ public class MovieMapper {
     // Return a list with MovieDto
     public List<MovieDto> toDtoList(List<Movie> list){
         return list.stream().map(this::toDto).toList(); // convert to all entities to dot
+    }
+
+
+    public Movie fromTorrentToMovie(TorrentMovieDto torrentMovieDto){
+        Movie movie = new Movie();
+        movie.setName(torrentMovieDto.getName());
+        movie.setCategory(torrentMovieDto.getCategory());
+        movie.setHash(torrentMovieDto.getHash());
+        movie.setDate(torrentMovieDto.getDate());
+        movie.setMagnet(torrentMovieDto.getMagnet());
+        movie.setPoster(torrentMovieDto.getPoster());
+        movie.setSize(torrentMovieDto.getSize());
+        movie.setExtractedFrom(torrentMovieDto.getUrl());
+        movie.setScreenshot(torrentMovieDto.getScreenshot());
+        return movie;
     }
 
 }

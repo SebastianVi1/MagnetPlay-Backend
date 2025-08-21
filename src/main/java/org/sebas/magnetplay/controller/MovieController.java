@@ -14,6 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin("http://localhost:5173")
 public class MovieController {
 
 
@@ -29,9 +30,14 @@ public class MovieController {
         return service.getMovies();
     }
 
-    @GetMapping("/movies/categories")
-    public ResponseEntity<Map<MovieCategory,List<MovieDto>>> getMoviesByCategory(){
-        return service.getMoviesOrderedByCategory();
+//    @GetMapping("/movies/categories")
+//    public ResponseEntity<Map<MovieCategory,List<MovieDto>>> getMoviesByCategory(){
+//        return service.getMoviesOrderedByCategory();
+//    }
+
+    @GetMapping("/movies/recent")
+    public ResponseEntity<?> getRecentMovies(){
+        return service.getRecentMovies();
     }
 
     @PreAuthorize("hasAnyRole('USER, ADMIN')")

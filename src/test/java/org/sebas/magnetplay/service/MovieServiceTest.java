@@ -47,10 +47,7 @@ public class MovieServiceTest {
         testMovie.setId(1L);
         testMovie.setName("Avengers");
         testMovie.setDescription("Test description...");
-        testMovie.setCategories(List.of(
-                MovieCategory.ACTION,
-                MovieCategory.COMEDY
-        ));
+        testMovie.setCategory("Movie");
 
         this.testMovieDto = new MovieDto();
         testMovieDto.setName("Avengers Dto");
@@ -190,14 +187,14 @@ public class MovieServiceTest {
         verify(repo).delete(any(Movie.class));
     }
 
-    @Test
-    void shouldReturnAllMoviesByCategoryWithOk(){
-        when(repo.findAll()).thenReturn(List.of(testMovie));
-
-        var result = service.getMoviesOrderedByCategory();
-
-        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-
-    }
+//    @Test
+//    void shouldReturnAllMoviesByCategoryWithOk(){
+//        when(repo.findAll()).thenReturn(List.of(testMovie));
+//
+//        var result = service.getMoviesOrderedByCategory();
+//
+//        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+//
+//    }
 
 }

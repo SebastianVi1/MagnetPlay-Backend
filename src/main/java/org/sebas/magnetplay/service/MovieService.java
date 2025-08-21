@@ -1,6 +1,7 @@
 package org.sebas.magnetplay.service;
 
 import org.sebas.magnetplay.dto.MovieDto;
+import org.sebas.magnetplay.dto.TorrentMovieDto;
 import org.sebas.magnetplay.exceptions.CategoryNotFoundException;
 import org.sebas.magnetplay.exceptions.InvalidDataException;
 import org.sebas.magnetplay.exceptions.MovieNotFoundException;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.*;
 
@@ -39,35 +41,36 @@ public class MovieService {
 
     }
 
-    public ResponseEntity<Map<MovieCategory,List<MovieDto>>> getMoviesOrderedByCategory() throws CategoryNotFoundException {
+//    public ResponseEntity<Map<MovieCategory,List<MovieDto>>> getMoviesOrderedByCategory() throws CategoryNotFoundException {
+//
+//       List<MovieDto> fetchMovies = mapper.toDtoList(repo.findAll());
+//        System.out.println(fetchMovies);
+//
+//        EnumMap<MovieCategory, List<MovieDto>> filteredMovies = new EnumMap<MovieCategory,List<MovieDto>>(MovieCategory.class);
+//        filteredMovies.put(MovieCategory.ACTION, new ArrayList<MovieDto>());
+//        filteredMovies.put(MovieCategory.COMEDY, new ArrayList<MovieDto>());
+//        filteredMovies.put(MovieCategory.HORROR, new ArrayList<MovieDto>());
+//        filteredMovies.put(MovieCategory.ROMANCE, new ArrayList<MovieDto>());
+//        filteredMovies.put(MovieCategory.FICTION, new ArrayList<MovieDto>());
+//
+//       for (MovieDto movie : fetchMovies){
+//           for (MovieCategory category: movie.getCategories()){
+//               switch (category){
+//                   case ACTION -> filteredMovies.get(MovieCategory.ACTION).add(movie);
+//                   case COMEDY -> filteredMovies.get(MovieCategory.COMEDY).add(movie);
+//                   case HORROR -> filteredMovies.get(MovieCategory.HORROR).add(movie);
+//                   case ROMANCE -> filteredMovies.get(MovieCategory.ROMANCE).add(movie);
+//                   case FICTION -> filteredMovies.get(MovieCategory.FICTION).add(movie);
+//                   default -> throw new CategoryNotFoundException("The category is nonexistent");
+//               }
+//           }
+//       }
+//
+//        return new ResponseEntity<>(filteredMovies, HttpStatus.OK);
+//
 
-       List<MovieDto> fetchMovies = mapper.toDtoList(repo.findAll());
-        System.out.println(fetchMovies);
+//    }
 
-        EnumMap<MovieCategory, List<MovieDto>> filteredMovies = new EnumMap<MovieCategory,List<MovieDto>>(MovieCategory.class);
-        filteredMovies.put(MovieCategory.ACTION, new ArrayList<MovieDto>());
-        filteredMovies.put(MovieCategory.COMEDY, new ArrayList<MovieDto>());
-        filteredMovies.put(MovieCategory.HORROR, new ArrayList<MovieDto>());
-        filteredMovies.put(MovieCategory.ROMANCE, new ArrayList<MovieDto>());
-        filteredMovies.put(MovieCategory.FICTION, new ArrayList<MovieDto>());
-
-       for (MovieDto movie : fetchMovies){
-           for (MovieCategory category: movie.getCategories()){
-               switch (category){
-                   case ACTION -> filteredMovies.get(MovieCategory.ACTION).add(movie);
-                   case COMEDY -> filteredMovies.get(MovieCategory.COMEDY).add(movie);
-                   case HORROR -> filteredMovies.get(MovieCategory.HORROR).add(movie);
-                   case ROMANCE -> filteredMovies.get(MovieCategory.ROMANCE).add(movie);
-                   case FICTION -> filteredMovies.get(MovieCategory.FICTION).add(movie);
-                   default -> throw new CategoryNotFoundException("The category is nonexistent");
-               }
-           }
-       }
-
-        return new ResponseEntity<>(filteredMovies, HttpStatus.OK);
-
-
-    }
 
     public ResponseEntity<MovieDto> getMovieById(Long id) {
         Optional<Movie> movie = repo.findById(id);
@@ -80,6 +83,9 @@ public class MovieService {
     public ResponseEntity<MovieDto> createMovie(MovieDto movieDto) throws InvalidDataException {
         if (movieDto == null){
             throw new InvalidDataException("Movie cannot be null");
+        }
+        if (repo.findById(movieDto.getId()).isEmpty()){
+            return new ResponseEntity<>(movieDto, HttpStatus.BAD_REQUEST);
         }
         Movie movie = repo.save(mapper.toModel(movieDto));
 
@@ -108,4 +114,14 @@ public class MovieService {
         return new ResponseEntity<>("Movie %s deleted".formatted(movie.getName()), HttpStatus.OK);
     }
 
+    public ResponseEntity<?> createTorrentMovie(@RequestBody TorrentMovieDto torrentMovie){
+        Movie movieEntity = mapper.fromTorrentToMovie(torrentMovie);
+        var newMovie = repo.save(movieEntity);
+        return new ResponseEntity<>(newMovie, HttpStatus.CREATED);
+
+    }
+
+    public ResponseEntity<?> getRecentMovies() {
+        return+
+    }
 }

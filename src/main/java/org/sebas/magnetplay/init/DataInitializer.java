@@ -40,17 +40,16 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        MovieDto testMovie = new MovieDto();
-        testMovie.setName("Avengers");
-        testMovie.setDescription("Test description...");
-        testMovie.setCategories(List.of(
-                MovieCategory.ACTION,
-                MovieCategory.COMEDY
-        ));
-        testMovie.setImageUri("https://wallpapercave.com/wp/wp4770368.jpg");
-        var result = movieService.createMovie(testMovie);
-        System.out.println(testMovie.getCategories());
-        System.out.println("Movie added");
+//        MovieDto testMovie = new MovieDto();
+//        testMovie.setName("Avengers");
+//        testMovie.setDescription("Test description...");
+//        testMovie.setCategories(List.of(
+//                MovieCategory.ACTION,
+//                MovieCategory.COMEDY
+//        ));
+//        testMovie.setImageUri("https://wallpapercave.com/wp/wp4770368.jpg");
+//        var result = movieService.createMovie(testMovie);
+//        System.out.println("Movie added");
 
         List<String> roles = List.of("ROLE_USER", "ROLE_ADMIN");
 
