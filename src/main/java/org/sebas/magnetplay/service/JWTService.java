@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import org.sebas.magnetplay.model.Users;
 import org.sebas.magnetplay.repo.UsersRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import java.util.function.Function;
 
 @Service
 public class JWTService {
+    @Getter
     private String secretKey = "";
     private UsersRepo usersRepo;
 

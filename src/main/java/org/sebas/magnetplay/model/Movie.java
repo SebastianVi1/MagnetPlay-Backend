@@ -1,9 +1,6 @@
 package org.sebas.magnetplay.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -26,23 +23,28 @@ public class Movie {
 
 
     private String size;
-
+    @Size(min = 1, max = 100)
     private String date;
 
+    @Size(max=1000)
     private String description;
 
+    @Size(max=500)
     private String extractedFrom;
 
     private List<String> screenshot;
 
     private String category;
 
+    @Size(max=500)
     private String poster;
 
     @Size(min = 0, max = 10000)
+    @Column(length = 10000)
     private String magnet;
 
-    @Size(min = 0, max = 1000)
+    @Size(min = 0, max = 2000)
+    @Column(length = 2000)
     private String hash;
 
     private List<String> genres;

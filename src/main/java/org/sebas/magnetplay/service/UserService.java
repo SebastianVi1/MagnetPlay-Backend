@@ -1,5 +1,7 @@
 package org.sebas.magnetplay.service;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import org.sebas.magnetplay.dto.AuthResponseDto;
 import org.sebas.magnetplay.dto.UserDto;
 import org.sebas.magnetplay.exceptions.UsernameTakenException;
@@ -99,5 +101,16 @@ public class UserService {
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
         throw new BadCredentialsException("The autentication failed");
+    }
+
+    public ResponseEntity<Boolean> validateToken(String value) {
+        try{
+
+            //TODO: Add token validation
+            return new ResponseEntity<>(true, HttpStatus.OK);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

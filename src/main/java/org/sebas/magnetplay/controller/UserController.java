@@ -38,6 +38,12 @@ public class UserController {
         return service.registerNewAdminUser(user);
     }
 
+    @PostMapping("/validate")
+    public ResponseEntity<Boolean> post(@RequestBody String value) {
+        return service.validateToken(value);
+
+    }
+
 
 
     // Use http://localhost:8080/api/auth/login/oauth/code/google to use oauth2
