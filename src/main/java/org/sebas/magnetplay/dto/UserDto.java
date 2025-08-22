@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserDto {
+    private Long id;
     @NotBlank(message = "The username canno't be empty")
     private String username;
     private String email;

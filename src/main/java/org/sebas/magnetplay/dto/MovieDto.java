@@ -15,5 +15,6 @@ public class MovieDto {
     private String posterUri;
     private String magnetUri;
     private String hash;
+    private List<String> genres;
 
 }

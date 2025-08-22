@@ -1,6 +1,7 @@
 package org.sebas.magnetplay.controller;
 
 import jakarta.validation.Valid;
+import org.sebas.magnetplay.dto.AuthResponseDto;
 import org.sebas.magnetplay.dto.UserDto;
 import org.sebas.magnetplay.exceptions.UsernameTakenException;
 import org.sebas.magnetplay.repo.UsersRepo;
@@ -27,7 +28,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody UserDto user){
+    public ResponseEntity<AuthResponseDto> login(@RequestBody UserDto user){
         return service.verifyUser(user);
     }
 

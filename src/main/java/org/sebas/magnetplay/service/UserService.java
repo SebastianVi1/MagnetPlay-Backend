@@ -1,5 +1,6 @@
 package org.sebas.magnetplay.service;
 
+import org.sebas.magnetplay.dto.AuthResponseDto;
 import org.sebas.magnetplay.dto.UserDto;
 import org.sebas.magnetplay.exceptions.UsernameTakenException;
 import org.sebas.magnetplay.mapper.UserMapper;
@@ -83,12 +84,19 @@ public class UserService {
         return new ResponseEntity<UserDto>(savedUserDto, HttpStatus.CREATED);
     }
 
-    public String verifyUser(UserDto user) {
+    public ResponseEntity<AuthResponseDto> verifyUser(UserDto user) {
         Authentication authentication =
                 authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
 
         if (authentication.isAuthenticated()){
-            return jwtService.generateToken(user.getUsername());
+            String token =  jwtService.generateToken(user.getUsername());
+            UserDto dbUser = userMapper.toDto(usersRepo.findByUsername(user.getUsername()));
+            AuthResponseDto response = new AuthResponseDto();
+            response.setUser(dbUser);
+            response.setToken(token);
+
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }
         throw new BadCredentialsException("The autentication failed");
     }

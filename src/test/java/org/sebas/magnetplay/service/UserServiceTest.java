@@ -98,7 +98,7 @@ public class UserServiceTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(jwtService.generateToken(any(String.class))).thenReturn(expectedToken);
 
-        String actualToken = userService.verifyUser(testUserDto);
+        String actualToken = userService.verifyUser(testUserDto).getBody().getToken();
 
         assertThat(actualToken).isEqualTo(expectedToken);
         verify(jwtService).generateToken(testUserDto.getUsername());

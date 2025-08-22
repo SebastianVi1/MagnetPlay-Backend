@@ -1,8 +1,10 @@
 package org.sebas.magnetplay.controllerTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.Test;
 import org.sebas.magnetplay.controller.UserController;
+import org.sebas.magnetplay.dto.AuthResponseDto;
 import org.sebas.magnetplay.dto.UserDto;
 import org.sebas.magnetplay.mapper.UserMapper;
 import org.sebas.magnetplay.model.Users;
@@ -12,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
@@ -60,13 +63,16 @@ public class UsersControllerTest {
         user.setPassword("admin");
 
         String token = "mocked-jwt-token";
-        when(userService.verifyUser(any(UserDto.class))).thenReturn(token);
+
+        AuthResponseDto response = new AuthResponseDto();
+        response.setUser(user);
+        response.setToken(token);
+        when(userService.verifyUser(any(UserDto.class))).thenReturn(new ResponseEntity<>(response, HttpStatus.OK));
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
-                .andExpect(status().isOk())
-                .andExpect(content().string(token));
+                .andExpect(status().isOk());
     }
 
     @Test

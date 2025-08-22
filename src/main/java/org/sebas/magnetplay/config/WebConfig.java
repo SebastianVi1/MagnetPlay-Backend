@@ -17,7 +17,8 @@ public class WebConfig {
                 registry.addMapping("/api/**")
                         .allowedOrigins("http://localhost:5173") // uri to allow
                         .allowedMethods("GET", "POST", "PUT", "DELETE") //operations to allow
-                        .allowedHeaders("*");
+                        .allowedHeaders("*")
+                        .allowCredentials(true);
             }
         };
     }

@@ -44,17 +44,10 @@ public class SecurityConfig {
                 .csrf(customizer -> customizer.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/movies/**").permitAll()
+                        .requestMatchers("/api/auth/register").permitAll()
+                        .requestMatchers("/api/movies").permitAll()
+                        .requestMatchers("/api/auth/register").permitAll()
                         .anyRequest().authenticated())
-                .oauth2Login(oauth2 -> oauth2
-                        .defaultSuccessUrl("/api/movies")) // redirect url.. home
-                .logout(logout -> logout
-                        .logoutUrl("/api/auth/logout")
-                        .logoutSuccessHandler(((request, response, authentication) -> {
-                            response.setStatus(HttpServletResponse.SC_OK);
-                            response.getWriter().write("Logged out seccessfully");
-                        } )))
                 .httpBasic(Customizer.withDefaults())
                 .formLogin(form -> form.disable())
                 .sessionManagement(session ->
@@ -63,6 +56,8 @@ public class SecurityConfig {
                 .build();
 
     }
+
+    //TODO:Add new Security Filter Chain with oauth2
 
     @Bean
     public AuthenticationProvider authenticationProvider(){

@@ -9,6 +9,7 @@ import org.sebas.magnetplay.service.MovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public class TorrentScrapper implements CommandLineRunner {
 
     private String url = "http://localhost:8009";
     private String category = "movies";
-    private String site = "all";
+    private String site = "1337x";
 
     @Autowired
     private MovieService movieService;
@@ -36,7 +37,13 @@ public class TorrentScrapper implements CommandLineRunner {
 
 
     private String getMoviesByRecent(){
-        return restTemplate.getForObject("%s/api/v1/recent?site=%s&limit=200&category=%s".formatted(url, site, category ), String.class);
+        try {
+
+            return restTemplate.getForObject("%s/api/v1/trending?site=%s&limit=50&category=%s".formatted(url, site, category ), String.class);
+        } catch (RestClientException e) {
+            throw new RuntimeException(e);
+        }
+
     }
     @Override
     public void run(String... args) throws Exception {
