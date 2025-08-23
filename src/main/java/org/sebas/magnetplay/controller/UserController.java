@@ -3,8 +3,6 @@ package org.sebas.magnetplay.controller;
 import jakarta.validation.Valid;
 import org.sebas.magnetplay.dto.AuthResponseDto;
 import org.sebas.magnetplay.dto.UserDto;
-import org.sebas.magnetplay.exceptions.UsernameTakenException;
-import org.sebas.magnetplay.repo.UsersRepo;
 import org.sebas.magnetplay.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +21,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserDto> registerNewUser(@RequestBody UserDto user) {
+    public ResponseEntity<AuthResponseDto> registerNewUser(@RequestBody UserDto user) {
         return service.registerNewUser(user);
     }
 
@@ -34,14 +32,13 @@ public class UserController {
 
     @PostMapping("/register/admin")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDto> registerNewAdminUser(@RequestBody @Valid UserDto user){
+    public ResponseEntity<AuthResponseDto> registerNewAdminUser(@RequestBody @Valid UserDto user){
         return service.registerNewAdminUser(user);
     }
 
     @PostMapping("/validate")
     public ResponseEntity<Boolean> post(@RequestBody String value) {
-        return service.validateToken(value);
-
+        return service.isTokenValid(value);
     }
 
 

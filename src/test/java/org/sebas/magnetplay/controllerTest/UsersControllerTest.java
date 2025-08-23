@@ -48,12 +48,17 @@ public class UsersControllerTest {
         user.setUsername("testUser");
         user.setPassword("admin");
 
-        when(userService.registerNewUser(any(UserDto.class))).thenReturn(ResponseEntity.of(Optional.of(user)));
+        AuthResponseDto response = new AuthResponseDto();
+        response.setUser(user);
+        response.setToken("mocked-jwt-token");
+
+        when(userService.registerNewUser(any(UserDto.class))).thenReturn(ResponseEntity.of(Optional.of(response)));
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("testUser"));
+                .andExpect(jsonPath("$.user.username").value("testUser"))
+                .andExpect(jsonPath("$.token").value("mocked-jwt-token"));
     }
 
     @Test
@@ -108,14 +113,19 @@ public class UsersControllerTest {
         adminUser.setUsername("adminUser");
         adminUser.setPassword("adminPass");
 
+        AuthResponseDto response = new AuthResponseDto();
+        response.setUser(adminUser);
+        response.setToken("mocked-admin-token");
+
         when(userService.registerNewAdminUser(any(UserDto.class)))
-                .thenReturn(ResponseEntity.of(Optional.of(adminUser)));
+                .thenReturn(ResponseEntity.of(Optional.of(response)));
 
         mockMvc.perform(post("/api/auth/register/admin")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(adminUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("adminUser"));
+                .andExpect(jsonPath("$.user.username").value("adminUser"))
+                .andExpect(jsonPath("$.token").value("mocked-admin-token"));
     }
 
 }

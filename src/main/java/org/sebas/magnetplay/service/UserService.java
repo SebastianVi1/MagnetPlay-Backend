@@ -1,12 +1,11 @@
 package org.sebas.magnetplay.service;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import org.sebas.magnetplay.dto.AuthResponseDto;
 import org.sebas.magnetplay.dto.UserDto;
 import org.sebas.magnetplay.exceptions.UsernameTakenException;
 import org.sebas.magnetplay.mapper.UserMapper;
 import org.sebas.magnetplay.model.Role;
+import org.sebas.magnetplay.model.UserPrincipal;
 import org.sebas.magnetplay.model.Users;
 import org.sebas.magnetplay.repo.RoleRepo;
 import org.sebas.magnetplay.repo.UsersRepo;
@@ -17,6 +16,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +25,7 @@ import java.util.Set;
 
 @Service
 public class UserService {
+
 
     private JWTService jwtService;
 
@@ -48,8 +49,7 @@ public class UserService {
     }
 
 
-    public ResponseEntity<UserDto> registerNewUser(UserDto userDto){
-
+    public ResponseEntity<AuthResponseDto> registerNewUser(UserDto userDto){
         // Convert UserDto to Entity
         Users user = userMapper.toModel(userDto);
 
@@ -62,12 +62,14 @@ public class UserService {
         user.setRoles(Set.of(role));
         user.setPassword(encoder.encode(user.getPassword())); // encrypt the password
         //save the new user
-        user = usersRepo.save(user);
-        userDto = userMapper.toDto(user);
-        return new ResponseEntity<UserDto>(userDto, HttpStatus.CREATED);
+        usersRepo.save(user);
+        AuthResponseDto authResponse = new AuthResponseDto();
+        authResponse = verifyUser(userDto).getBody();
+     //make a login to return token and user info
+        return new ResponseEntity<AuthResponseDto>(authResponse, HttpStatus.CREATED);
     }
 
-    public ResponseEntity<UserDto> registerNewAdminUser(UserDto userDto){
+    public ResponseEntity<AuthResponseDto> registerNewAdminUser(UserDto userDto){
         Users user = userMapper.toModel(userDto);
         // Verify if the username exists
         if (usersRepo.findByUsername(user.getUsername()) != null){
@@ -81,9 +83,9 @@ public class UserService {
                 )
         );
         user.setPassword(encoder.encode(user.getPassword())); // encrypt the password
-        Users userSaved =  usersRepo.save(user);
-        UserDto savedUserDto = userMapper.toDto(userSaved);
-        return new ResponseEntity<UserDto>(savedUserDto, HttpStatus.CREATED);
+        usersRepo.save(user);
+        AuthResponseDto authResponse = verifyUser(userDto).getBody(); //make a login to return token and user info
+        return new ResponseEntity<AuthResponseDto>(authResponse, HttpStatus.CREATED);
     }
 
     public ResponseEntity<AuthResponseDto> verifyUser(UserDto user) {
@@ -103,14 +105,14 @@ public class UserService {
         throw new BadCredentialsException("The autentication failed");
     }
 
-    public ResponseEntity<Boolean> validateToken(String value) {
-        try{
-
-            //TODO: Add token validation
-            return new ResponseEntity<>(true, HttpStatus.OK);
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    public ResponseEntity<Boolean> isTokenValid(String token) {
+        if (token == null || token.isEmpty()){
+            return new ResponseEntity<>(false, HttpStatus.BAD_REQUEST);
         }
+             boolean response = jwtService.isTokenValid(token);
+            return response
+                    ? new ResponseEntity<Boolean>(true, HttpStatus.OK)
+                    : new ResponseEntity<Boolean>(false, HttpStatus.UNAUTHORIZED);
+
     }
 }

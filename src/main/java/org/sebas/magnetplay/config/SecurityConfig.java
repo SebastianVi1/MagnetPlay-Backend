@@ -45,8 +45,9 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/test/**").permitAll()
                         .requestMatchers("/api/movies/categories").permitAll()
-                        .requestMatchers("/api/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Permitir preflight requests
                         .anyRequest().authenticated())
                 .formLogin(form -> form.disable())
                 .sessionManagement(session ->

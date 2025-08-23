@@ -8,13 +8,11 @@ import lombok.Getter;
 import org.sebas.magnetplay.model.Users;
 import org.sebas.magnetplay.repo.UsersRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,16 +21,16 @@ import java.util.function.Function;
 @Service
 public class JWTService {
     @Getter
-    private String secretKey = "";
+    @Value("${jwt.secret}")
+    private String secretKey;
     private UsersRepo usersRepo;
 
-    //Constructor
-    // @Autowired
-    public JWTService(UsersRepo usersRepo) throws NoSuchAlgorithmException {
+    private static final long ACCES_TOKEN_TTL_MS = 15 * 60 * 1000L; //15 minutes
+
+    @Autowired
+    public JWTService(UsersRepo usersRepo) {
         this.usersRepo = usersRepo;
-        KeyGenerator keyGen = KeyGenerator.getInstance("HmacSHA256");
-        SecretKey sk = keyGen.generateKey();
-        secretKey = Base64.getEncoder().encodeToString(sk.getEncoded());
+        // secretKey is now injected from application.properties or environment
     }
 
     // Generate jwt token
@@ -52,7 +50,7 @@ public class JWTService {
                 .add(claims)
                 .subject(username)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 60 * 60 * 30 ))
+                .expiration(new Date(System.currentTimeMillis() + ACCES_TOKEN_TTL_MS))
                 .and()
                 .signWith(getKey())
                 .compact();
@@ -79,9 +77,28 @@ public class JWTService {
                 .getPayload();
     }
 
-    public boolean validateToken(String token, UserDetails userDetails){
-        final String userName = extractUsername(token);
-        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    public Boolean isTokenValid(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            Date exp = claims.getExpiration();
+            return exp != null && exp.after(new Date());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean validateToken(String token, UserDetails userDetails) {
+        try {
+            Claims claims = extractAllClaims(token);
+            String subject = claims.getSubject();
+            Date exp = claims.getExpiration();
+            return subject != null
+                    && subject.equals(userDetails.getUsername())
+                    && exp != null
+                    && exp.after(new Date());
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private boolean isTokenExpired(String token){
