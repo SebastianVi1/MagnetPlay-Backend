@@ -138,4 +138,9 @@ public class UserService {
         usersRepo.save(user);
         return new ResponseEntity<>("Movie added to favorites successfully" , HttpStatus.OK);
     }
+
+    public ResponseEntity<List<Movie>> getMyFavoriteMovies(Long userId) {
+        List<Movie> favoriteMovies = movieRepo.findAll();
+        return new ResponseEntity<List<Movie>>(favoriteMovies, HttpStatus.OK);
+    }
 }

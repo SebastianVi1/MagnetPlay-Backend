@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -130,5 +131,18 @@ public class UserServiceTest {
         verify(userRepo).save(testUser);
     }
 
+
+    @Test
+    void shouldReturnMyFavoriteMovies(){
+        //Given
+        when(movieRepo.findAll()).thenReturn(List.of(new Movie()));
+
+        //When
+        var result = userService.getMyFavoriteMovies(1L);
+
+        //Then
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(movieRepo).findAll();
+    }
 
 }
