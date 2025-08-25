@@ -4,10 +4,13 @@ import org.sebas.magnetplay.dto.MovieDto;
 import org.sebas.magnetplay.dto.TorrentMovieDto;
 import org.sebas.magnetplay.exceptions.InvalidDataException;
 import org.sebas.magnetplay.exceptions.MovieNotFoundException;
+import org.sebas.magnetplay.exceptions.UserNotFoundException;
 import org.sebas.magnetplay.mapper.MovieMapper;
 import org.sebas.magnetplay.model.Movie;
 import org.sebas.magnetplay.model.ParseMovie;
+import org.sebas.magnetplay.model.Users;
 import org.sebas.magnetplay.repo.MovieRepo;
+import org.sebas.magnetplay.repo.UsersRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,13 +27,15 @@ import static java.awt.SystemColor.info;
 @Service
 public class MovieService {
 
+    private final UsersRepo usersRepo;
     private MovieMapper mapper;
     private MovieRepo repo;
 
     @Autowired
-    public MovieService(MovieRepo repo, MovieMapper mapper){
+    public MovieService(MovieRepo repo, MovieMapper mapper, UsersRepo usersRepo){
         this.repo = repo;
         this.mapper = mapper;
+        this.usersRepo = usersRepo;
     }
 
     public ResponseEntity<List<MovieDto>> getMovies(){
@@ -155,4 +160,7 @@ public class MovieService {
         Matcher matcher = resPattern.matcher(title);
         return matcher.find();
     }
+
+
+
 }

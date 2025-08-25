@@ -48,4 +48,14 @@ public class GlobalExceptionsHandler {
         );
         return new ResponseEntity<>(usernameTaken, HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler
+    public ResponseEntity<?> handleGenericException(Exception exception){
+        ErrorResponseDto genericError = new ErrorResponseDto(
+                exception.getMessage(),
+                "The user entered was not found",
+                HttpStatus.NOT_FOUND.value()
+        );
+        return new ResponseEntity<>(genericError, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

@@ -41,7 +41,9 @@ public class UserController {
         return service.isTokenValid(value);
     }
 
+    @PutMapping("/users/{userId}/favorites/{movieId}")
+    public ResponseEntity<?> addMovieToFavorites(@PathVariable Long movieId, @PathVariable Long userId){
+        return service.addMovieToFavorites(movieId, userId);
+    }
 
-
-    // Use http://localhost:8080/api/auth/login/oauth/code/google to use oauth2
 }

@@ -8,8 +8,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.sebas.magnetplay.dto.UserDto;
 import org.sebas.magnetplay.mapper.UserMapper;
+import org.sebas.magnetplay.model.Movie;
 import org.sebas.magnetplay.model.Role;
 import org.sebas.magnetplay.model.Users;
+import org.sebas.magnetplay.repo.MovieRepo;
 import org.sebas.magnetplay.repo.RoleRepo;
 import org.sebas.magnetplay.repo.UsersRepo;
 import org.springframework.http.HttpStatus;
@@ -35,6 +37,9 @@ public class UserServiceTest {
 
     @Mock
     private UsersRepo userRepo;
+
+    @Mock
+    private MovieRepo movieRepo;
 
     @Mock
     private UserMapper userMapper;
@@ -102,6 +107,27 @@ public class UserServiceTest {
 
         assertThat(actualToken).isEqualTo(expectedToken);
         verify(jwtService).generateToken(testUserDto.getUsername());
+    }
+
+    @Test
+    void shouldAddAMovieToFavoritesList(){
+        Movie movie = new Movie();
+        movie.setId(1L);
+        movie.setName("Test Movie");
+        //Given
+        when(movieRepo.findById(1L))
+                .thenReturn(Optional.of(movie));
+
+        when(userRepo.findById(1L)).thenReturn(Optional.of(testUser));
+        //When
+        var result = userService.addMovieToFavorites(1L, 1L);
+
+        //Then
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isEqualTo("Movie added to favorites successfully");
+        verify(movieRepo).findById(1L);
+        verify(userRepo).findById(1L);
+        verify(userRepo).save(testUser);
     }
 
 

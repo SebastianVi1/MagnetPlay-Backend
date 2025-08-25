@@ -2,11 +2,14 @@ package org.sebas.magnetplay.service;
 
 import org.sebas.magnetplay.dto.AuthResponseDto;
 import org.sebas.magnetplay.dto.UserDto;
+import org.sebas.magnetplay.exceptions.MovieNotFoundException;
+import org.sebas.magnetplay.exceptions.UserNotFoundException;
 import org.sebas.magnetplay.exceptions.UsernameTakenException;
 import org.sebas.magnetplay.mapper.UserMapper;
+import org.sebas.magnetplay.model.Movie;
 import org.sebas.magnetplay.model.Role;
-import org.sebas.magnetplay.model.UserPrincipal;
 import org.sebas.magnetplay.model.Users;
+import org.sebas.magnetplay.repo.MovieRepo;
 import org.sebas.magnetplay.repo.RoleRepo;
 import org.sebas.magnetplay.repo.UsersRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,16 +19,18 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
 public class UserService {
 
+
+    private MovieRepo movieRepo;
 
     private JWTService jwtService;
 
@@ -40,12 +45,13 @@ public class UserService {
     AuthenticationManager authManager;
 
     @Autowired
-    public UserService(UsersRepo usersRepo, AuthenticationManager authManager, JWTService jwtService, RoleRepo roleRepo, UserMapper userMapper){
+    public UserService(UsersRepo usersRepo, AuthenticationManager authManager, JWTService jwtService, RoleRepo roleRepo, UserMapper userMapper, MovieRepo movieRepo){
         this.jwtService = jwtService;
         this.authManager = authManager;
         this.usersRepo = usersRepo;
         this.roleRepo = roleRepo;
         this.userMapper = userMapper;
+        this.movieRepo = movieRepo;
     }
 
 
@@ -114,5 +120,22 @@ public class UserService {
                     ? new ResponseEntity<Boolean>(true, HttpStatus.OK)
                     : new ResponseEntity<Boolean>(false, HttpStatus.UNAUTHORIZED);
 
+    }
+
+
+    public ResponseEntity<?> addMovieToFavorites(Long movieId, Long userId ) {
+        Optional<Movie> movieOptional = movieRepo.findById(movieId);
+
+        if (movieOptional.isEmpty()){
+            throw new MovieNotFoundException("Movie with the id: %d not found".formatted(movieId));
+        }
+        Users user = usersRepo.findById(userId).orElseThrow(() ->
+                new UserNotFoundException("The user with the id: %d not found".formatted(userId)));
+        Set<Movie> favoriteMovies = user.getFavoriteMovies();
+
+        favoriteMovies.add(movieOptional.get());
+        user.setFavoriteMovies(favoriteMovies);
+        usersRepo.save(user);
+        return new ResponseEntity<>("Movie added to favorites successfully" , HttpStatus.OK);
     }
 }
