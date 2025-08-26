@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.sebas.magnetplay.dto.AuthResponseDto;
 import org.sebas.magnetplay.dto.UserDto;
 import org.sebas.magnetplay.model.Movie;
+import org.sebas.magnetplay.service.JWTService;
 import org.sebas.magnetplay.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,12 @@ import java.util.List;
 public class UserController {
 
    private UserService service;
+   private JWTService jwtService;
 
     @Autowired
-    public UserController(UserService service){
+    public UserController(UserService service, JWTService jwtService){
         this.service = service;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/register")
@@ -52,6 +55,11 @@ public class UserController {
     @GetMapping("/users/{userId}/favorites")
     public ResponseEntity<List<Movie>> getMyFavoriteMovies(@PathVariable Long userId){
         return service.getMyFavoriteMovies(userId);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponseDto> refreshToken(@RequestBody String refreshToken) {
+        return service.refreshAccessToken(refreshToken);
     }
 
 }

@@ -43,6 +43,8 @@ public class TorrentMovieDto {
 
     private String hash;
 
+    private List<String> genres;
+
 }
 
 

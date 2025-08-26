@@ -26,6 +26,7 @@ public class JWTService {
     private UsersRepo usersRepo;
 
     private static final long ACCES_TOKEN_TTL_MS = 15 * 60 * 1000L; //15 minutes
+    private static final long REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000L; // 7 days
 
     @Autowired
     public JWTService(UsersRepo usersRepo) {
@@ -56,7 +57,28 @@ public class JWTService {
                 .compact();
     }
 
+    // Generate refresh token
+    public String generateRefreshToken(String username) {
+        Map<String, Object> claims = new HashMap<>();
+        Users user = usersRepo.findByUsername(username);
+        claims.put("userId", user.getId());
+        claims.put("roles", user.getRoles());
+        claims.put("isUserEnabled", user.isEnabled());
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_TTL_MS))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
     private SecretKey getKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
@@ -81,7 +103,7 @@ public class JWTService {
         try {
             Claims claims = extractAllClaims(token);
             Date exp = claims.getExpiration();
-            return exp != null && exp.after(new Date());
+            return !isTokenExpired(token) && exp.after(new Date());
         } catch (Exception e) {
             return false;
         }
@@ -91,14 +113,17 @@ public class JWTService {
         try {
             Claims claims = extractAllClaims(token);
             String subject = claims.getSubject();
-            Date exp = claims.getExpiration();
             return subject != null
                     && subject.equals(userDetails.getUsername())
-                    && exp != null
-                    && exp.after(new Date());
+                    && !isTokenExpired(token);
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public boolean isRefreshTokenValid(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
     private boolean isTokenExpired(String token){

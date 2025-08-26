@@ -63,6 +63,8 @@ public class MovieMapper {
         movie.setSize(torrentMovieDto.getSize());
         movie.setExtractedFrom(torrentMovieDto.getUrl());
         movie.setScreenshot(torrentMovieDto.getScreenshot());
+        movie.setDescription(torrentMovieDto.getDescription());
+        movie.setGenres(torrentMovieDto.getGenres());
         return movie;
     }
 

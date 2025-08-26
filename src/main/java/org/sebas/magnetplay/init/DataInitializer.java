@@ -57,5 +57,7 @@ public class DataInitializer implements CommandLineRunner {
             userService.registerNewAdminUser(admin);
             System.out.println("Default admin user added, use admin and admin123 as password");
         }
+
+
     }
 }

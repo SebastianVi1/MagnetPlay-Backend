@@ -19,6 +19,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -42,6 +43,9 @@ public class UserService {
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
+    @Autowired
+    private MyUserDetailsService myUserDetailsService;
+
     AuthenticationManager authManager;
 
     @Autowired
@@ -54,6 +58,12 @@ public class UserService {
         this.movieRepo = movieRepo;
     }
 
+    private AuthResponseDto buildAuthResponse(Users user) {
+        String token = jwtService.generateToken(user.getUsername());
+        String refreshToken = jwtService.generateRefreshToken(user.getUsername());
+        UserDto responseUserDto = userMapper.toDto(user);
+        return new AuthResponseDto(responseUserDto, token, refreshToken);
+    }
 
     public ResponseEntity<AuthResponseDto> registerNewUser(UserDto userDto){
         // Convert UserDto to Entity
@@ -69,10 +79,8 @@ public class UserService {
         user.setPassword(encoder.encode(user.getPassword())); // encrypt the password
         //save the new user
         usersRepo.save(user);
-        AuthResponseDto authResponse = new AuthResponseDto();
-        authResponse = verifyUser(userDto).getBody();
-     //make a login to return token and user info
-        return new ResponseEntity<AuthResponseDto>(authResponse, HttpStatus.CREATED);
+        AuthResponseDto authResponse = buildAuthResponse(user);
+        return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
     }
 
     public ResponseEntity<AuthResponseDto> registerNewAdminUser(UserDto userDto){
@@ -90,8 +98,8 @@ public class UserService {
         );
         user.setPassword(encoder.encode(user.getPassword())); // encrypt the password
         usersRepo.save(user);
-        AuthResponseDto authResponse = verifyUser(userDto).getBody(); //make a login to return token and user info
-        return new ResponseEntity<AuthResponseDto>(authResponse, HttpStatus.CREATED);
+        AuthResponseDto authResponse = buildAuthResponse(user);
+        return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
     }
 
     public ResponseEntity<AuthResponseDto> verifyUser(UserDto user) {
@@ -100,12 +108,9 @@ public class UserService {
 
         if (authentication.isAuthenticated()){
             String token =  jwtService.generateToken(user.getUsername());
+            String refreshToken = jwtService.generateRefreshToken(user.getUsername());
             UserDto dbUser = userMapper.toDto(usersRepo.findByUsername(user.getUsername()));
-            AuthResponseDto response = new AuthResponseDto();
-            response.setUser(dbUser);
-            response.setToken(token);
-
-
+            AuthResponseDto response = new AuthResponseDto(dbUser, token, refreshToken);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
         throw new BadCredentialsException("The autentication failed");
@@ -143,4 +148,24 @@ public class UserService {
         List<Movie> favoriteMovies = movieRepo.findAll();
         return new ResponseEntity<List<Movie>>(favoriteMovies, HttpStatus.OK);
     }
+
+    public ResponseEntity<AuthResponseDto> refreshAccessToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+        String username;
+        try {
+            username = jwtService.extractUsername(refreshToken);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+        }
+        Users user = usersRepo.findByUsername(username);
+        UserDetails userDetails = myUserDetailsService.loadUserByUsername(username);
+        if (user == null || !jwtService.isRefreshTokenValid(refreshToken,userDetails)) {
+            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+        }
+        AuthResponseDto response = buildAuthResponse(user);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 }
