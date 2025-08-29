@@ -58,4 +58,15 @@ public class GlobalExceptionsHandler {
         );
         return new ResponseEntity<>(genericError, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler
+    public ResponseEntity<?> handleInvalidRefreshToken(InvalidRefreshTokenException exception){
+        ErrorResponseDto invalidToken = new ErrorResponseDto(
+                exception.getMessage(),
+                "The token sent is invalid",
+                HttpStatus.BAD_REQUEST.value()
+        );
+        return new ResponseEntity<>(invalidToken, HttpStatus.BAD_REQUEST);
+
+    }
 }

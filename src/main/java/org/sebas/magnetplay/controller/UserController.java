@@ -2,6 +2,7 @@ package org.sebas.magnetplay.controller;
 
 import jakarta.validation.Valid;
 import org.sebas.magnetplay.dto.AuthResponseDto;
+import org.sebas.magnetplay.dto.RefreshTokenDto;
 import org.sebas.magnetplay.dto.UserDto;
 import org.sebas.magnetplay.model.Movie;
 import org.sebas.magnetplay.service.JWTService;
@@ -58,7 +59,7 @@ public class UserController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponseDto> refreshToken(@RequestBody String refreshToken) {
+    public ResponseEntity<AuthResponseDto> refreshToken(@RequestBody RefreshTokenDto refreshToken) {
         return service.refreshAccessToken(refreshToken);
     }
 

@@ -2,6 +2,8 @@ package org.sebas.magnetplay.service;
 
 import org.sebas.magnetplay.dto.AuthResponseDto;
 import org.sebas.magnetplay.dto.UserDto;
+import org.sebas.magnetplay.dto.RefreshTokenDto;
+import org.sebas.magnetplay.exceptions.InvalidRefreshTokenException;
 import org.sebas.magnetplay.exceptions.MovieNotFoundException;
 import org.sebas.magnetplay.exceptions.UserNotFoundException;
 import org.sebas.magnetplay.exceptions.UsernameTakenException;
@@ -20,6 +22,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -61,6 +64,7 @@ public class UserService {
     private AuthResponseDto buildAuthResponse(Users user) {
         String token = jwtService.generateToken(user.getUsername());
         String refreshToken = jwtService.generateRefreshToken(user.getUsername());
+        System.out.println(refreshToken);
         UserDto responseUserDto = userMapper.toDto(user);
         return new AuthResponseDto(responseUserDto, token, refreshToken);
     }
@@ -109,6 +113,7 @@ public class UserService {
         if (authentication.isAuthenticated()){
             String token =  jwtService.generateToken(user.getUsername());
             String refreshToken = jwtService.generateRefreshToken(user.getUsername());
+            System.out.println(refreshToken);
             UserDto dbUser = userMapper.toDto(usersRepo.findByUsername(user.getUsername()));
             AuthResponseDto response = new AuthResponseDto(dbUser, token, refreshToken);
             return new ResponseEntity<>(response, HttpStatus.OK);
@@ -149,23 +154,38 @@ public class UserService {
         return new ResponseEntity<List<Movie>>(favoriteMovies, HttpStatus.OK);
     }
 
-    public ResponseEntity<AuthResponseDto> refreshAccessToken(String refreshToken) {
-        if (refreshToken == null || refreshToken.isEmpty()) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<AuthResponseDto> refreshAccessToken(RefreshTokenDto refreshTokenDto) {
+        if (refreshTokenDto == null || refreshTokenDto.getRefreshToken() == null || refreshTokenDto.getRefreshToken().isEmpty()) {
+            throw new InvalidRefreshTokenException("Invalid refresh token");
         }
-        String username;
+
+        String refreshToken = refreshTokenDto.getRefreshToken();
+        
         try {
-            username = jwtService.extractUsername(refreshToken);
+            String username = jwtService.extractUsername(refreshToken);
+            System.out.println("Extracted username: " + username);
+            
+            if (username == null || username.isEmpty()) {
+                throw new InvalidRefreshTokenException("Could not extract username from token");
+            }
+            
+            Users user = usersRepo.findByUsername(username);
+            if (user == null) {
+                throw new UserNotFoundException("User not found for username: " + username);
+            }
+            
+            UserDetails userDetails = myUserDetailsService.loadUserByUsername(username);
+            if (!jwtService.isRefreshTokenValid(refreshToken, userDetails)) {
+                throw new InvalidRefreshTokenException("Refresh token is not valid");
+            }
+            
+            AuthResponseDto response = buildAuthResponse(user);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+            
         } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+            System.err.println("Error during token refresh: " + e.getMessage());
+            throw new InvalidRefreshTokenException("Token refresh failed: " + e.getMessage());
         }
-        Users user = usersRepo.findByUsername(username);
-        UserDetails userDetails = myUserDetailsService.loadUserByUsername(username);
-        if (user == null || !jwtService.isRefreshTokenValid(refreshToken,userDetails)) {
-            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
-        }
-        AuthResponseDto response = buildAuthResponse(user);
-        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
 }

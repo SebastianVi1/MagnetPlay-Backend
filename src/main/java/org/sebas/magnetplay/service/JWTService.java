@@ -25,7 +25,7 @@ public class JWTService {
     private String secretKey;
     private UsersRepo usersRepo;
 
-    private static final long ACCES_TOKEN_TTL_MS = 15 * 60 * 1000L; //15 minutes
+    private static final long ACCES_TOKEN_TTL_MS = 15 * 60 * 10L; //15 minutes
     private static final long REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000L; // 7 days
 
     @Autowired
@@ -53,7 +53,7 @@ public class JWTService {
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + ACCES_TOKEN_TTL_MS))
                 .and()
-                .signWith(getKey())
+                .signWith(getSigningKey())
                 .compact();
     }
 
@@ -62,20 +62,17 @@ public class JWTService {
         Map<String, Object> claims = new HashMap<>();
         Users user = usersRepo.findByUsername(username);
         claims.put("userId", user.getId());
-        claims.put("roles", user.getRoles());
         claims.put("isUserEnabled", user.isEnabled());
+        
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(username)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_TTL_MS))
+                .claims()
+                .add(claims)
+                .subject(username)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_TTL_MS))
+                .and()
                 .signWith(getSigningKey())
                 .compact();
-    }
-
-    private SecretKey getKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     private SecretKey getSigningKey() {
@@ -94,7 +91,7 @@ public class JWTService {
 
     private Claims extractAllClaims(String token){
         return Jwts.parser()
-                .verifyWith(getKey())
+                .verifyWith(getSigningKey())
                 .build().parseSignedClaims(token)
                 .getPayload();
     }

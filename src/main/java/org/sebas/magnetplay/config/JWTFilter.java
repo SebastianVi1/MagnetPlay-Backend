@@ -33,7 +33,8 @@ public class JWTFilter extends OncePerRequestFilter {
      protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
          String path = request.getRequestURI();
          // skip jwt for this endpoint
-         return path.startsWith("/api/auth/register");
+         return path.startsWith("/api/auth/register") || 
+                path.startsWith("/api/auth/refresh");
      }
 
     @Override
