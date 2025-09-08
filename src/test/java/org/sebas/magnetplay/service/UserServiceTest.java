@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.sebas.magnetplay.dto.AuthResponseDto;
 import org.sebas.magnetplay.dto.UserDto;
 import org.sebas.magnetplay.mapper.UserMapper;
 import org.sebas.magnetplay.model.Movie;
@@ -91,7 +92,7 @@ public class UserServiceTest {
 
         // Then
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(result.getBody()).isInstanceOf(UserDto.class);
+        assertThat(result.getBody()).isInstanceOf(AuthResponseDto.class);
         verify(userRepo).save(any(Users.class));
         verify(roleRepo).findByName(any(String.class));
     }
@@ -135,14 +136,13 @@ public class UserServiceTest {
     @Test
     void shouldReturnMyFavoriteMovies(){
         //Given
-        when(movieRepo.findAll()).thenReturn(List.of(new Movie()));
+        when(userRepo.findById(1L)).thenReturn(Optional.of(new Users()));
 
         //When
         var result = userService.getMyFavoriteMovies(1L);
 
         //Then
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(movieRepo).findAll();
     }
 
 }

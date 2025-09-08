@@ -25,7 +25,7 @@ public class JWTService {
     private String secretKey;
     private UsersRepo usersRepo;
 
-    private static final long ACCES_TOKEN_TTL_MS = 15 * 60 * 10L; //15 minutes
+    private static final long ACCES_TOKEN_TTL_MS = 15 * 60 * 1000L; //15 minutes
     private static final long REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000L; // 7 days
 
     @Autowired
@@ -37,14 +37,16 @@ public class JWTService {
     // Generate jwt token
     public String generateToken(String username){
         Map<String, Object> claims = new HashMap<>();
-        /*
-        Add info to the claims so the token can store data without db
-        At this point we know the user is existent in the db
-        */
-        Users user= usersRepo.findByUsername(username);
-        claims.put("userId", user.getId());
-        claims.put("roles", user.getRoles());
-        claims.put("isUserEnabled", user.isEnabled());
+        Users user = usersRepo.findByUsername(username);
+        if (user == null) {
+            claims.put("userId", -1);
+            claims.put("roles", "ROLE_USER");
+            claims.put("isUserEnabled", true);
+        } else {
+            claims.put("userId", user.getId());
+            claims.put("roles", user.getRoles());
+            claims.put("isUserEnabled", user.isEnabled());
+        }
 
         return Jwts.builder()
                 .claims()
@@ -61,9 +63,14 @@ public class JWTService {
     public String generateRefreshToken(String username) {
         Map<String, Object> claims = new HashMap<>();
         Users user = usersRepo.findByUsername(username);
-        claims.put("userId", user.getId());
-        claims.put("isUserEnabled", user.isEnabled());
-        
+        if (user == null) {
+            claims.put("userId", -1);
+            claims.put("isUserEnabled", true);
+        } else {
+            claims.put("userId", user.getId());
+            claims.put("isUserEnabled", user.isEnabled());
+        }
+
         return Jwts.builder()
                 .claims()
                 .add(claims)

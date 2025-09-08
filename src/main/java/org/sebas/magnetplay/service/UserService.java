@@ -25,10 +25,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Collections;
+
 
 @Service
 public class UserService {
@@ -113,7 +115,6 @@ public class UserService {
         if (authentication.isAuthenticated()){
             String token =  jwtService.generateToken(user.getUsername());
             String refreshToken = jwtService.generateRefreshToken(user.getUsername());
-            System.out.println(refreshToken);
             UserDto dbUser = userMapper.toDto(usersRepo.findByUsername(user.getUsername()));
             AuthResponseDto response = new AuthResponseDto(dbUser, token, refreshToken);
             return new ResponseEntity<>(response, HttpStatus.OK);
@@ -149,9 +150,15 @@ public class UserService {
         return new ResponseEntity<>("Movie added to favorites successfully" , HttpStatus.OK);
     }
 
-    public ResponseEntity<List<Movie>> getMyFavoriteMovies(Long userId) {
-        List<Movie> favoriteMovies = movieRepo.findAll();
-        return new ResponseEntity<List<Movie>>(favoriteMovies, HttpStatus.OK);
+    @Transactional(readOnly = true)
+    public ResponseEntity<Set<Movie>> getMyFavoriteMovies(Long userId) {
+        Users user = usersRepo.findById(userId)
+                .orElseThrow( () ->
+                        new UsernameNotFoundException("The user doesn't exist")
+                );
+
+        Set<Movie> movies = user.getFavoriteMovies();
+        return new ResponseEntity<Set<Movie>>(movies, HttpStatus.OK);
     }
 
     public ResponseEntity<AuthResponseDto> refreshAccessToken(RefreshTokenDto refreshTokenDto) {

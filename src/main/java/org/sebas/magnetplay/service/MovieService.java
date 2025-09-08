@@ -62,9 +62,7 @@ public class MovieService {
         if (movieDto == null){
             throw new InvalidDataException("Movie cannot be null");
         }
-        if (repo.findById(movieDto.getId()).isEmpty()){
-            return new ResponseEntity<>(movieDto, HttpStatus.BAD_REQUEST);
-        }
+
         Movie movie = repo.save(mapper.toModel(movieDto));
 
         return new ResponseEntity<>(mapper.toDto(movie), HttpStatus.CREATED);

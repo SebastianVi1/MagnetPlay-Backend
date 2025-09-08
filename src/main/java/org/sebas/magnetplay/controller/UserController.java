@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -54,7 +55,7 @@ public class UserController {
     }
 
     @GetMapping("/users/{userId}/favorites")
-    public ResponseEntity<List<Movie>> getMyFavoriteMovies(@PathVariable Long userId){
+    public ResponseEntity<Set<Movie>> getMyFavoriteMovies(@PathVariable Long userId){
         return service.getMyFavoriteMovies(userId);
     }
 
