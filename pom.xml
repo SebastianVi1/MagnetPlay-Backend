@@ -11,7 +11,7 @@
     <groupId>org.sebas</groupId>
     <artifactId>MagnetPlay</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
     <name>MagnetPlay</name>
     <description>MagnetPlay</description>
     <url/>
@@ -68,7 +68,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-tomcat</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
