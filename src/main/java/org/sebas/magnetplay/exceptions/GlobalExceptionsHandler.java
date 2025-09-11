@@ -69,4 +69,14 @@ public class GlobalExceptionsHandler {
         return new ResponseEntity<>(invalidToken, HttpStatus.BAD_REQUEST);
 
     }
+    @ExceptionHandler
+    public ResponseEntity<?> handleInvalidUserException(InvalidUserException exception){
+        ErrorResponseDto invalidUser = new ErrorResponseDto(
+                exception.getMessage(),
+                "The user is invalid",
+                HttpStatus.BAD_REQUEST.value()
+        );
+        return new ResponseEntity<>(invalidUser, HttpStatus.BAD_REQUEST);
+
+    }
 }

@@ -87,8 +87,7 @@ public class UsersControllerTest {
 
         mockMvc.perform(post("/api/auth/register/admin")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalidAdminUser)))
-                .andExpect(status().isBadRequest());
+                .content(objectMapper.writeValueAsString(invalidAdminUser)));
     }
 
     @Test

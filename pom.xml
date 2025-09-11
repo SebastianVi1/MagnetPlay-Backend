@@ -10,7 +10,7 @@
     </parent>
     <groupId>org.sebas</groupId>
     <artifactId>MagnetPlay</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>v1</version>
     <packaging>jar</packaging>
     <name>MagnetPlay</name>
     <description>MagnetPlay</description>
