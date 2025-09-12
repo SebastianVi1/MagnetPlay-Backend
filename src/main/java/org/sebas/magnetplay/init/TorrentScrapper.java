@@ -21,7 +21,7 @@ public class TorrentScrapper implements CommandLineRunner {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    private String url = "http://app:8009";
+    private String url = "http://torrent-api:8009";
     private String category = "movies";
     private String site = "1337x";
 
