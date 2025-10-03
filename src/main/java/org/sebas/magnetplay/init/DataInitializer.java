@@ -8,6 +8,7 @@ import org.sebas.magnetplay.repo.UsersRepo;
 import org.sebas.magnetplay.service.MovieService;
 import org.sebas.magnetplay.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -34,6 +35,14 @@ public class DataInitializer implements CommandLineRunner {
     private MovieService movieService;
 
 
+    // use aplication.properties secret values
+    @Value("${admin.username}")
+    String adminUsername;
+
+    @Value("${admin.password}")
+    String adminPassword;
+
+
     @Override
     public void run(String... args) throws Exception {
         List<String> roles = List.of("ROLE_USER", "ROLE_ADMIN");
@@ -51,11 +60,15 @@ public class DataInitializer implements CommandLineRunner {
 
 
         if(userRepo.findAll().isEmpty()){
+
             UserDto admin = new UserDto();
-            admin.setUsername("admin");
-            admin.setPassword("admin123");
+
+
+
+            admin.setUsername(adminUsername);
+            admin.setPassword(adminPassword);
             userService.registerNewAdminUser(admin);
-            System.out.println("Default admin user added, use admin and admin123 as password");
+            System.out.println("admin user admin consult dev for acces");
         }
 
 

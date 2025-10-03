@@ -160,5 +160,7 @@ public class MovieService {
     }
 
 
-
+    public ResponseEntity<?> streamMovie(Long id) {
+        return null;
+    }
 }

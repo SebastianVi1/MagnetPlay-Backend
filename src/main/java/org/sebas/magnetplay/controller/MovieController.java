@@ -64,4 +64,8 @@ public class MovieController {
         return service.deleteMovie(movieId);
     }
 
+    @GetMapping("movies/{id}/stream")
+    public ResponseEntity<?> streamMovie(@PathVariable Long id){
+        return service.streamMovie(id);
+    }
 }

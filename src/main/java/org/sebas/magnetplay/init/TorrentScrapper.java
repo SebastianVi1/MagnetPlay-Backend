@@ -38,10 +38,11 @@ public class TorrentScrapper implements CommandLineRunner {
 
     private String getMoviesByRecent(){
         try {
+            return restTemplate.getForObject("%s/api/v1/recent?site=%s&limit=100&category=%s".formatted(url, site, category ), String.class);
 
-            return restTemplate.getForObject("%s/api/v1/trending?site=%s&limit=50&category=%s".formatted(url, site, category ), String.class);
         } catch (RestClientException e) {
-            throw new RuntimeException(e);
+            System.out.println("error");
+            throw new RestClientException(e.getMessage());
         }
 
     }

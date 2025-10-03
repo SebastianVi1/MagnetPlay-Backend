@@ -5,7 +5,7 @@ WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:go-offline -B --no-transfer-progress
 
-COPY src ./src
+COPY . .
 
 EXPOSE 8080 35729
 
