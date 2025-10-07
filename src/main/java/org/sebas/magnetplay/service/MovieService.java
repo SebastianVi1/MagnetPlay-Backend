@@ -1,21 +1,21 @@
 package org.sebas.magnetplay.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.sebas.magnetplay.dto.MovieDto;
 import org.sebas.magnetplay.dto.TorrentMovieDto;
 import org.sebas.magnetplay.exceptions.InvalidDataException;
 import org.sebas.magnetplay.exceptions.MovieNotFoundException;
-import org.sebas.magnetplay.exceptions.UserNotFoundException;
 import org.sebas.magnetplay.mapper.MovieMapper;
 import org.sebas.magnetplay.model.Movie;
 import org.sebas.magnetplay.model.ParseMovie;
-import org.sebas.magnetplay.model.Users;
 import org.sebas.magnetplay.repo.MovieRepo;
 import org.sebas.magnetplay.repo.UsersRepo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -28,14 +28,25 @@ import static java.awt.SystemColor.info;
 public class MovieService {
 
     private final UsersRepo usersRepo;
+    private final ObjectMapper objectMapper;
     private MovieMapper mapper;
     private MovieRepo repo;
 
+
+    private String url = "http://torrent-api:8009";
+    private String category = "movies";
+    private String site = "1337x";
+    private RestTemplate restTemplate;
+
+
     @Autowired
-    public MovieService(MovieRepo repo, MovieMapper mapper, UsersRepo usersRepo){
+    public MovieService(MovieRepo repo, MovieMapper mapper, UsersRepo usersRepo, ObjectMapper objectMapper){
         this.repo = repo;
         this.mapper = mapper;
         this.usersRepo = usersRepo;
+        this.objectMapper = objectMapper;
+
+        restTemplate = new RestTemplate();
     }
 
     public ResponseEntity<List<MovieDto>> getMovies(){
@@ -103,8 +114,30 @@ public class MovieService {
 
     }
 
-    public ResponseEntity<?> getRecentMovies() {
-    return null;
+
+    public ResponseEntity<String> getRecentMovies(){
+
+        try {
+             String result = restTemplate.getForObject("%s/api/v1/recent?site=%s&limit=200&category=%s".formatted(url, site, category ), String.class);
+             return new ResponseEntity<String>(result, HttpStatus.OK);
+        } catch (RestClientException e) {
+            System.out.println("error");
+            throw new RestClientException(e.getMessage());
+        }
+
+    }
+
+    public ResponseEntity<String> getTrendingMovies(){
+        // TODO: Add pages
+
+        try {
+            String result = restTemplate.getForObject("%s/api/v1/trending?site=%s&limit=200&category=%s".formatted(url, site, category ), String.class);
+            return new ResponseEntity<String>(result, HttpStatus.OK);
+        } catch (RestClientException e) {
+            System.out.println("error");
+            throw new RestClientException(e.getMessage());
+        }
+
     }
 
     public ResponseEntity<Map<String,List<MovieDto>>> getOrderedByCategory(){

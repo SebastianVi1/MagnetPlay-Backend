@@ -40,6 +40,12 @@ public class MovieController {
     }
 
     @PreAuthorize("hasAnyRole('USER, ADMIN')")
+    @GetMapping("/movies/trending")
+    public ResponseEntity<?> getTrendingMovies(){
+        return service.getTrendingMovies();
+    }
+
+    @PreAuthorize("hasAnyRole('USER, ADMIN')")
     @GetMapping("/movies/{movieId}")
     public ResponseEntity<?> getMovieById(@PathVariable Long movieId){ // return MovieDto if succes else ErrorResponse
         return service.getMovieById(movieId);

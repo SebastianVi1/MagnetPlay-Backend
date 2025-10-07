@@ -19,12 +19,6 @@ import java.util.stream.Collectors;
 @Component
 public class TorrentScrapper implements CommandLineRunner {
 
-    private final RestTemplate restTemplate = new RestTemplate();
-
-    private String url = "http://torrent-api:8009";
-    private String category = "movies";
-    private String site = "1337x";
-
     @Autowired
     private MovieService movieService;
 
@@ -34,22 +28,10 @@ public class TorrentScrapper implements CommandLineRunner {
     @Autowired
     private ObjectMapper mapper;
 
-
-
-    private String getMoviesByRecent(){
-        try {
-            return restTemplate.getForObject("%s/api/v1/recent?site=%s&limit=100&category=%s".formatted(url, site, category ), String.class);
-
-        } catch (RestClientException e) {
-            System.out.println("error");
-            throw new RestClientException(e.getMessage());
-        }
-
-    }
     @Override
     public void run(String... args) throws Exception {
 
-        TorrentDataDto result = mapper.readValue(getMoviesByRecent(), TorrentDataDto.class);
+        TorrentDataDto result = mapper.readValue(movieService.getRecentMovies().getBody(), TorrentDataDto.class);
         List<TorrentMovieDto> movieList = result.getData();
         List<Movie> dbMovies = movieRepo.findAll();
 
