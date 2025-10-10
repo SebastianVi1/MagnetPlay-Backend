@@ -31,22 +31,8 @@ public class TorrentScrapper implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
 
-        TorrentDataDto result = mapper.readValue(movieService.getRecentMovies().getBody(), TorrentDataDto.class);
-        List<TorrentMovieDto> movieList = result.getData();
-        List<Movie> dbMovies = movieRepo.findAll();
 
 
-        Set<String> dbHashes = dbMovies.stream() //convert the list into a set if the hash is not in the is added
-                .map(Movie::getHash)
-                .collect(Collectors.toSet());
-        for (TorrentMovieDto movie : movieList) {
-            if (movie.getSize().startsWith( "2")){
-                continue;
-            }
-            if (dbHashes.add(movie.getHash())) {
-                movieService.createTorrentMovie(movie);
-            }
-        }
 
     }
 }

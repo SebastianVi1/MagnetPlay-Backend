@@ -1,7 +1,9 @@
 package org.sebas.magnetplay.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.sebas.magnetplay.dto.MovieDto;
+import org.sebas.magnetplay.dto.TorrentDataDto;
 import org.sebas.magnetplay.dto.TorrentMovieDto;
 import org.sebas.magnetplay.exceptions.InvalidDataException;
 import org.sebas.magnetplay.exceptions.MovieNotFoundException;
@@ -13,7 +15,6 @@ import org.sebas.magnetplay.repo.UsersRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -21,29 +22,25 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.awt.SystemColor.info;
-
 
 @Service
 public class MovieService {
 
-    private final UsersRepo usersRepo;
     private final ObjectMapper objectMapper;
-    private MovieMapper mapper;
+    private MovieMapper movieMapper;
     private MovieRepo repo;
 
 
-    private String url = "http://torrent-api:8009";
-    private String category = "movies";
-    private String site = "1337x";
-    private RestTemplate restTemplate;
+    private final String url = "http://torrent-api:8009";
+    private final String category = "movies";
+    private final String site = "1337x";
+    private final RestTemplate restTemplate;
 
 
     @Autowired
-    public MovieService(MovieRepo repo, MovieMapper mapper, UsersRepo usersRepo, ObjectMapper objectMapper){
+    public MovieService(MovieRepo repo, MovieMapper movieMapper, UsersRepo usersRepo, ObjectMapper objectMapper){
         this.repo = repo;
-        this.mapper = mapper;
-        this.usersRepo = usersRepo;
+        this.movieMapper = movieMapper;
         this.objectMapper = objectMapper;
 
         restTemplate = new RestTemplate();
@@ -51,12 +48,8 @@ public class MovieService {
 
     public ResponseEntity<List<MovieDto>> getMovies(){
         List<Movie> movieList = repo.findAll();
-        List<MovieDto> movieDtos = new ArrayList<MovieDto>();
-
-        movieDtos = movieList.stream()
-                .map((model) -> mapper.toDto(model))
-                .toList();
-        return new ResponseEntity<List<MovieDto>>(movieDtos, HttpStatus.OK);
+        List<MovieDto> movieDtos = movieMapper.toDtoList(movieList);
+        return new ResponseEntity<>(movieDtos, HttpStatus.OK);
 
     }
 
@@ -66,7 +59,7 @@ public class MovieService {
         if (movie.isEmpty()){
             throw new MovieNotFoundException("Movie with the id: %d not found".formatted(id));
         }
-        return new ResponseEntity<MovieDto>(mapper.toDto(movie.get()), HttpStatus.OK);
+        return new ResponseEntity<MovieDto>(movieMapper.toDto(movie.get()), HttpStatus.OK);
     }
 
     public ResponseEntity<MovieDto> createMovie(MovieDto movieDto) throws InvalidDataException {
@@ -74,17 +67,17 @@ public class MovieService {
             throw new InvalidDataException("Movie cannot be null");
         }
 
-        Movie movie = repo.save(mapper.toModel(movieDto));
+        Movie movie = repo.save(movieMapper.toModel(movieDto));
 
-        return new ResponseEntity<>(mapper.toDto(movie), HttpStatus.CREATED);
+        return new ResponseEntity<>(movieMapper.toDto(movie), HttpStatus.CREATED);
     }
 
     public ResponseEntity<?> updateMovie(Long movieId, MovieDto updatedMovie){
         if (repo.findById(movieId).isEmpty()){
             throw new MovieNotFoundException("Movie with the id: %d not found".formatted(movieId));
         }
-        MovieDto result = mapper.toDto(
-                repo.save(mapper.toModel(updatedMovie))
+        MovieDto result = movieMapper.toDto(
+                repo.save(movieMapper.toModel(updatedMovie))
         );
 
         return new ResponseEntity<>(result, HttpStatus.OK);
@@ -102,46 +95,80 @@ public class MovieService {
     }
 
 
-    public ResponseEntity<?> createTorrentMovie(@RequestBody TorrentMovieDto torrentMovie){
+    public ResponseEntity<?> createTorrentMovie(TorrentMovieDto torrentMovie){
         String parsedTitle = parseMovieTitle(torrentMovie.getName());
         torrentMovie.setName(parsedTitle);
         if (!is1080pTorrent(torrentMovie)){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        Movie movieEntity = mapper.fromTorrentToMovie(torrentMovie);
-        var newMovie = repo.save(movieEntity);
+        Movie movieEntity = movieMapper.fromTorrentToMovie(torrentMovie);
+        Movie newMovie = repo.save(movieEntity);
         return new ResponseEntity<>(newMovie, HttpStatus.CREATED);
 
     }
 
 
-    public ResponseEntity<String> getRecentMovies(){
-
+    public ResponseEntity<List<MovieDto>> getRecentMovies() throws JsonProcessingException {
         try {
-             String result = restTemplate.getForObject("%s/api/v1/recent?site=%s&limit=200&category=%s".formatted(url, site, category ), String.class);
-             return new ResponseEntity<String>(result, HttpStatus.OK);
+            String result = restTemplate.getForObject("%s/api/v1/recent?site=%s&limit=200&category=%s".formatted(url, site, category ), String.class);
+            List<MovieDto> finalResult = saveTorrentInDatabase(result);
+            return new ResponseEntity<>(finalResult, HttpStatus.OK);
         } catch (RestClientException e) {
-            System.out.println("error");
-            throw new RestClientException(e.getMessage());
+            System.err.println("Error en getRecentMovies: " + e.getMessage());
+            throw new RestClientException("Error getting the recent movies", e);
         }
-
     }
 
-    public ResponseEntity<String> getTrendingMovies(){
-        // TODO: Add pages
-
+    public ResponseEntity<List<MovieDto>> getTrendingMovies() throws JsonProcessingException {
         try {
             String result = restTemplate.getForObject("%s/api/v1/trending?site=%s&limit=200&category=%s".formatted(url, site, category ), String.class);
-            return new ResponseEntity<String>(result, HttpStatus.OK);
-        } catch (RestClientException e) {
-            System.out.println("error");
-            throw new RestClientException(e.getMessage());
+            List<MovieDto> finalResult = saveTorrentInDatabase(result);
+            return new ResponseEntity<>(finalResult, HttpStatus.OK);
+        } catch (Exception e) {
+            System.err.println("Error on getTrendingMovies: " + e.getMessage());
+            throw new RestClientException("Error obtaining the movies", e);
+        }
+    }
+
+     public List<MovieDto> saveTorrentInDatabase(String result) throws JsonProcessingException {
+
+        // Convert api response to TorrentDataDto
+        TorrentDataDto resultDto = objectMapper.readValue(result, TorrentDataDto.class);
+        List<TorrentMovieDto> torrentMovieDtos = resultDto.getData();
+
+        // Process and save only new movies
+        List<Movie> savedMovies = new ArrayList<>();
+
+        for (TorrentMovieDto torrentDto : torrentMovieDtos) {
+            // Parse title
+            String parsedTitle = parseMovieTitle(torrentDto.getName());
+            torrentDto.setName(parsedTitle);
+
+            // Only process 1080p movies
+            if (!is1080pTorrent(torrentDto)) {
+                continue;
+            }
+
+            // Check if movie already exists by hash
+            Optional<Movie> existingMovie = repo.findByHash(torrentDto.getHash());
+
+            if (existingMovie.isPresent()) {
+                // Movie already exists, add to list
+                savedMovies.add(existingMovie.get());
+            } else {
+                // New movie, convert and save
+                Movie movieEntity = movieMapper.fromTorrentToMovie(torrentDto);
+                Movie newMovie = repo.save(movieEntity);
+                savedMovies.add(newMovie);
+            }
         }
 
+        // Convert saved movies to DTOs and return
+        return movieMapper.toDtoList(savedMovies);
     }
 
     public ResponseEntity<Map<String,List<MovieDto>>> getOrderedByCategory(){
-        List<MovieDto> movieList = mapper.toDtoList(repo.findAll());
+        List<MovieDto> movieList = movieMapper.toDtoList(repo.findAll());
 
         HashSet<String> categories = new HashSet<>();
         HashMap<String, List<MovieDto>> categoryMap = new HashMap<>();
@@ -173,15 +200,19 @@ public class MovieService {
         if (yearMatcher.find()) {
             info.year = yearMatcher.group();
             info.name = title.substring(0, yearMatcher.start()).replaceAll("[.]", " ").trim();
+        } else {
+            info.name = title.replaceAll("[.]", " ").trim();
+            info.year = "";
         }
         Pattern resPattern = Pattern.compile("(2160p|1080p|720p|480p)");
         Matcher resMatcher = resPattern.matcher(title);
         if (resMatcher.find()) {
             info.resolution = resMatcher.group();
+        } else {
+            info.resolution = "";
         }
-        return String.format("%s %s %s", info.name, info.year, info.resolution);
+        return String.format("%s %s %s", info.name, info.year, info.resolution).trim();
     }
-
 
 
     public boolean is1080pTorrent(TorrentMovieDto torrentMovieDto) {
@@ -191,9 +222,5 @@ public class MovieService {
         Matcher matcher = resPattern.matcher(title);
         return matcher.find();
     }
-
-
-    public ResponseEntity<?> streamMovie(Long id) {
-        return null;
-    }
 }
+

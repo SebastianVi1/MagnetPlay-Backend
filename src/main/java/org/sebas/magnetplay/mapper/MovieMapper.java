@@ -68,4 +68,21 @@ public class MovieMapper {
         return movie;
     }
 
+    public List<MovieDto> fromApiResponseToMovieDtoList(List<TorrentMovieDto> torrentList){
+        return torrentList.stream().map(torrent -> {
+            MovieDto dto = new MovieDto();
+            dto.setName(torrent.getName());
+            dto.setCategory(torrent.getCategory());
+            dto.setHash(torrent.getHash());
+            dto.setDate(torrent.getDate());
+            dto.setMagnetUri(torrent.getMagnet());
+            dto.setPosterUri(torrent.getPoster());
+            dto.setScreenshot(torrent.getScreenshot());
+            dto.setDescription(torrent.getDescription());
+            dto.setGenres(torrent.getGenres());
+            // Set other fields if needed
+            return dto;
+        }).toList();
+    }
+
 }

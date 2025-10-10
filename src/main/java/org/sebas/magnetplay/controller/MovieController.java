@@ -1,5 +1,6 @@
 package org.sebas.magnetplay.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.validation.Valid;
 import org.sebas.magnetplay.dto.MovieDto;
 import org.sebas.magnetplay.service.MovieService;
@@ -13,11 +14,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin("http://localhost:5173")
+@CrossOrigin("http://frontend:5173")
 public class MovieController {
 
 
-    private MovieService service;
+    private final MovieService service;
 
     @Autowired
     public MovieController(MovieService movieService){
@@ -35,13 +36,12 @@ public class MovieController {
     }
 
     @GetMapping("/movies/recent")
-    public ResponseEntity<?> getRecentMovies(){
+    public ResponseEntity<List<MovieDto>> getRecentMovies() throws JsonProcessingException {
         return service.getRecentMovies();
     }
 
-    @PreAuthorize("hasAnyRole('USER, ADMIN')")
     @GetMapping("/movies/trending")
-    public ResponseEntity<?> getTrendingMovies(){
+    public ResponseEntity<List<MovieDto>> getTrendingMovies() throws JsonProcessingException {
         return service.getTrendingMovies();
     }
 
@@ -70,8 +70,4 @@ public class MovieController {
         return service.deleteMovie(movieId);
     }
 
-    @GetMapping("movies/{id}/stream")
-    public ResponseEntity<?> streamMovie(@PathVariable Long id){
-        return service.streamMovie(id);
-    }
 }
