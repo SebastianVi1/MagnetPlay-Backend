@@ -110,18 +110,18 @@ public class MovieService {
 
     public ResponseEntity<List<MovieDto>> getRecentMovies() throws JsonProcessingException {
         try {
-            String result = restTemplate.getForObject("%s/api/v1/recent?site=%s&limit=200&category=%s".formatted(url, site, category ), String.class);
+            String result = restTemplate.getForObject("%s/api/v1/recent?site=%s&limit=100&category=%s".formatted(url, site, category ), String.class);
             List<MovieDto> finalResult = saveTorrentInDatabase(result);
             return new ResponseEntity<>(finalResult, HttpStatus.OK);
         } catch (RestClientException e) {
-            System.err.println("Error en getRecentMovies: " + e.getMessage());
+            System.err.println("Error on getRecentMovies: " + e.getMessage());
             throw new RestClientException("Error getting the recent movies", e);
         }
     }
 
     public ResponseEntity<List<MovieDto>> getTrendingMovies() throws JsonProcessingException {
         try {
-            String result = restTemplate.getForObject("%s/api/v1/trending?site=%s&limit=200&category=%s".formatted(url, site, category ), String.class);
+            String result = restTemplate.getForObject("%s/api/v1/trending?site=%s&limit=100&category=%s".formatted(url, site, category ), String.class);
             List<MovieDto> finalResult = saveTorrentInDatabase(result);
             return new ResponseEntity<>(finalResult, HttpStatus.OK);
         } catch (Exception e) {
@@ -131,39 +131,45 @@ public class MovieService {
     }
 
      public List<MovieDto> saveTorrentInDatabase(String result) throws JsonProcessingException {
-
-        // Convert api response to TorrentDataDto
         TorrentDataDto resultDto = objectMapper.readValue(result, TorrentDataDto.class);
         List<TorrentMovieDto> torrentMovieDtos = resultDto.getData();
 
-        // Process and save only new movies
-        List<Movie> savedMovies = new ArrayList<>();
-
+        // Filter duplicates by processed title (one movie per title)
+        Map<String, TorrentMovieDto> titleToTorrent = new HashMap<>();
         for (TorrentMovieDto torrentDto : torrentMovieDtos) {
-            // Parse title
-            String parsedTitle = parseMovieTitle(torrentDto.getName());
-            torrentDto.setName(parsedTitle);
 
-            // Only process 1080p movies
+            if (!torrentDto.getPoster()) {
+                continue;
+            }
+            // Only process 1080p torrents
             if (!is1080pTorrent(torrentDto)) {
                 continue;
             }
 
-            // Check if movie already exists by hash
-            Optional<Movie> existingMovie = repo.findByHash(torrentDto.getHash());
+            // Parse the title to clean it
+            String parsedTitle = parseMovieTitle(torrentDto.getName());
+            torrentDto.setName(parsedTitle);
 
+            // Filter by unique title (only save the first torrent for each title)
+            if (!titleToTorrent.containsKey(parsedTitle)) {
+                titleToTorrent.put(parsedTitle, torrentDto);
+            }
+        }
+
+        List<Movie> savedMovies = new ArrayList<>();
+        for (TorrentMovieDto uniqueTorrent : titleToTorrent.values()) {
+            // Search by name to avoid duplicate movies with the same title but different hash
+            Optional<Movie> existingMovie = repo.findByName(uniqueTorrent.getName());
             if (existingMovie.isPresent()) {
-                // Movie already exists, add to list
+                // Movie with this name already exists in the DB, use existing one
                 savedMovies.add(existingMovie.get());
             } else {
                 // New movie, convert and save
-                Movie movieEntity = movieMapper.fromTorrentToMovie(torrentDto);
+                Movie movieEntity = movieMapper.fromTorrentToMovie(uniqueTorrent);
                 Movie newMovie = repo.save(movieEntity);
                 savedMovies.add(newMovie);
             }
         }
-
-        // Convert saved movies to DTOs and return
         return movieMapper.toDtoList(savedMovies);
     }
 
@@ -195,23 +201,27 @@ public class MovieService {
 
     public String parseMovieTitle(String title){
         ParseMovie info = new ParseMovie();
+
+        // Remove parentheses and common special characters
+        String cleanTitle = title.replaceAll("[()\\[\\]{}]", " ").replaceAll("[.]", " ").replaceAll("_", " ").replaceAll("\\s+", " ").trim();
         Pattern yearPattern = Pattern.compile("(19|20)\\d{2}");
-        Matcher yearMatcher = yearPattern.matcher(title);
+        Matcher yearMatcher = yearPattern.matcher(cleanTitle);
         if (yearMatcher.find()) {
             info.year = yearMatcher.group();
-            info.name = title.substring(0, yearMatcher.start()).replaceAll("[.]", " ").trim();
+            info.name = cleanTitle.substring(0, yearMatcher.start()).trim();
         } else {
-            info.name = title.replaceAll("[.]", " ").trim();
+            info.name = cleanTitle.trim();
             info.year = "";
         }
         Pattern resPattern = Pattern.compile("(2160p|1080p|720p|480p)");
-        Matcher resMatcher = resPattern.matcher(title);
+        Matcher resMatcher = resPattern.matcher(cleanTitle);
         if (resMatcher.find()) {
             info.resolution = resMatcher.group();
         } else {
             info.resolution = "";
         }
-        return String.format("%s %s %s", info.name, info.year, info.resolution).trim();
+        // Unify format for comparison
+        return String.format("%s %s %s", info.name, info.year, info.resolution).replaceAll("\\s+", " ").trim();
     }
 
 
@@ -223,4 +233,3 @@ public class MovieService {
         return matcher.find();
     }
 }
-
