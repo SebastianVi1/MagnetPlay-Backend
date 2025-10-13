@@ -134,14 +134,17 @@ public class MovieService {
         TorrentDataDto resultDto = objectMapper.readValue(result, TorrentDataDto.class);
         List<TorrentMovieDto> torrentMovieDtos = resultDto.getData();
 
-        // Filter and deduplicate by title (name + year only)
+        System.out.println("📥 Received " + torrentMovieDtos.size() + " torrents from API");
+
+        // Step 1: Filter and deduplicate by title (name + year only)
         Map<String, TorrentMovieDto> uniqueTorrents = new LinkedHashMap<>();
 
         for (TorrentMovieDto torrent : torrentMovieDtos) {
-            // Skip if no magnet
+            // Skip if no magnet (essential field)
             if (torrent.getMagnet() == null || torrent.getMagnet().trim().isEmpty()) {
                 continue;
             }
+
             // Parse and clean title (only name + year, no resolution)
             String parsedTitle = parseMovieTitle(torrent.getName());
             if (parsedTitle == null || parsedTitle.trim().isEmpty()) {
@@ -149,41 +152,61 @@ public class MovieService {
             }
 
             parsedTitle = parsedTitle.trim();
-            torrent.setName(parsedTitle);
 
-            // Keep only one torrent per title (best quality by score)
-            if (!uniqueTorrents.containsKey(parsedTitle)) {
-                uniqueTorrents.put(parsedTitle, torrent);
+            // Normalize title for consistent comparison (lowercase, single spaces)
+            String normalizedTitle = parsedTitle.toLowerCase().replaceAll("\\s+", " ");
+            torrent.setName(parsedTitle); // Keep original case for display
+
+            // Keep only one torrent per normalized title (best quality by score)
+            if (!uniqueTorrents.containsKey(normalizedTitle)) {
+                uniqueTorrents.put(normalizedTitle, torrent);
             } else {
                 // Compare scores and keep the better one
-                TorrentMovieDto existing = uniqueTorrents.get(parsedTitle);
+                TorrentMovieDto existing = uniqueTorrents.get(normalizedTitle);
                 int newScore = calculateTorrentQualityScore(torrent);
                 int existingScore = calculateTorrentQualityScore(existing);
 
                 if (newScore > existingScore) {
-                    uniqueTorrents.put(parsedTitle, torrent);
+                    uniqueTorrents.put(normalizedTitle, torrent);
                 }
             }
         }
 
-        // Save to database
+
+        // Step 2: Save to database (check both by name AND hash to avoid all duplicates)
         List<Movie> savedMovies = new ArrayList<>();
+        int newCount = 0;
+        int existingCount = 0;
+        int skippedCount = 0;
 
         for (TorrentMovieDto torrent : uniqueTorrents.values()) {
             try {
-                // Check if already exists in DB (case-insensitive)
-                Optional<Movie> existingMovie = repo.findFirstByNameIgnoreCase(torrent.getName());
+                String movieName = torrent.getName();
+                String movieHash = torrent.getHash();
 
-                if (existingMovie.isPresent()) {
-                    savedMovies.add(existingMovie.get());
+                // Check if already exists by name (case-insensitive)
+                Optional<Movie> existingByName = repo.findFirstByNameIgnoreCase(movieName);
+
+                // Check if already exists by hash
+                Optional<Movie> existingByHash = movieHash != null ? repo.findByHash(movieHash) : Optional.empty();
+
+                // If movie exists by name OR hash, use the existing one
+                if (existingByName.isPresent()) {
+                    savedMovies.add(existingByName.get());
+                    existingCount++;
+                } else if (existingByHash.isPresent()) {
+                    savedMovies.add(existingByHash.get());
+                    existingCount++;
                 } else {
-                    // Save new movie
+                    // New movie - save it
                     Movie newMovie = movieMapper.fromTorrentToMovie(torrent);
                     Movie saved = repo.save(newMovie);
                     savedMovies.add(saved);
+                    newCount++;
                 }
             } catch (Exception e) {
                 System.err.println("❌ Error saving movie: " + torrent.getName() + " - " + e.getMessage());
+                skippedCount++;
             }
         }
 
