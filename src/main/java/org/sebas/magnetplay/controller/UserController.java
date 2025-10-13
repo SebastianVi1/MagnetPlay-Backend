@@ -49,16 +49,6 @@ public class UserController {
         return service.isTokenValid(value);
     }
 
-    @PutMapping("/users/{userId}/favorites/{movieId}")
-    public ResponseEntity<?> addMovieToFavorites(@PathVariable Long movieId, @PathVariable Long userId){
-        return service.addMovieToFavorites(movieId, userId);
-    }
-
-    @GetMapping("/users/{userId}/favorites")
-    public ResponseEntity<Set<Movie>> getMyFavoriteMovies(@PathVariable Long userId){
-        return service.getMyFavoriteMovies(userId);
-    }
-
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponseDto> refreshToken(@RequestBody RefreshTokenDto refreshToken) {
         return service.refreshAccessToken(refreshToken);

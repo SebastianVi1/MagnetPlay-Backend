@@ -1,12 +1,14 @@
 package org.sebas.magnetplay.service;
 
 import org.sebas.magnetplay.dto.AuthResponseDto;
+import org.sebas.magnetplay.dto.MovieDto;
 import org.sebas.magnetplay.dto.UserDto;
 import org.sebas.magnetplay.dto.RefreshTokenDto;
 import org.sebas.magnetplay.exceptions.InvalidRefreshTokenException;
 import org.sebas.magnetplay.exceptions.MovieNotFoundException;
 import org.sebas.magnetplay.exceptions.UserNotFoundException;
 import org.sebas.magnetplay.exceptions.UsernameTakenException;
+import org.sebas.magnetplay.mapper.MovieMapper;
 import org.sebas.magnetplay.mapper.UserMapper;
 import org.sebas.magnetplay.model.Movie;
 import org.sebas.magnetplay.model.Role;
@@ -26,10 +28,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.xml.stream.events.Comment;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Collections;
+import java.util.ArrayList;
 
 
 @Service
@@ -46,6 +51,8 @@ public class UserService {
 
     private UsersRepo usersRepo;
 
+    private MovieMapper movieMapper;
+
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     @Autowired
@@ -54,13 +61,14 @@ public class UserService {
     AuthenticationManager authManager;
 
     @Autowired
-    public UserService(UsersRepo usersRepo, AuthenticationManager authManager, JWTService jwtService, RoleRepo roleRepo, UserMapper userMapper, MovieRepo movieRepo){
+    public UserService(UsersRepo usersRepo, AuthenticationManager authManager, JWTService jwtService, RoleRepo roleRepo, UserMapper userMapper, MovieRepo movieRepo, MovieMapper movieMapper){
         this.jwtService = jwtService;
         this.authManager = authManager;
         this.usersRepo = usersRepo;
         this.roleRepo = roleRepo;
         this.userMapper = userMapper;
         this.movieRepo = movieRepo;
+        this.movieMapper = movieMapper;
     }
 
     private AuthResponseDto buildAuthResponse(Users user) {
@@ -134,6 +142,7 @@ public class UserService {
     }
 
 
+    @Transactional
     public ResponseEntity<?> addMovieToFavorites(Long movieId, Long userId ) {
         Optional<Movie> movieOptional = movieRepo.findById(movieId);
 
@@ -142,7 +151,16 @@ public class UserService {
         }
         Users user = usersRepo.findById(userId).orElseThrow(() ->
                 new UserNotFoundException("The user with the id: %d not found".formatted(userId)));
+
         Set<Movie> favoriteMovies = user.getFavoriteMovies();
+
+        // Check if already in favorites
+        boolean alreadyExists = favoriteMovies.stream()
+                .anyMatch(movie -> movie.getId().equals(movieId));
+
+        if (alreadyExists) {
+            return new ResponseEntity<>("Movie already in favorites", HttpStatus.OK);
+        }
 
         favoriteMovies.add(movieOptional.get());
         user.setFavoriteMovies(favoriteMovies);
@@ -151,14 +169,65 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<Set<Movie>> getMyFavoriteMovies(Long userId) {
+    public ResponseEntity<List<MovieDto>> getMyFavoriteMovies(Long userId) {
         Users user = usersRepo.findById(userId)
                 .orElseThrow( () ->
                         new UsernameNotFoundException("The user doesn't exist")
                 );
 
-        Set<Movie> movies = user.getFavoriteMovies();
-        return new ResponseEntity<Set<Movie>>(movies, HttpStatus.OK);
+        Set<Movie> favoriteMovies = user.getFavoriteMovies();
+
+        // Convert Set<Movie> to List<Movie> then to List<MovieDto>
+        List<Movie> movieList = new ArrayList<>(favoriteMovies);
+        List<MovieDto> moviesDto = movieMapper.toDtoList(movieList);
+
+        return new ResponseEntity<>(moviesDto, HttpStatus.OK);
+    }
+
+    @Transactional
+    public ResponseEntity<?> deleteMovieFromFavorites(Long userId, Long movieId){
+        // Find the user
+        Users user = usersRepo.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("The user with the id: %d not found".formatted(userId)));
+
+        // Find the movie
+        Optional<Movie> movieOptional = movieRepo.findById(movieId);
+        if (movieOptional.isEmpty()) {
+            throw new MovieNotFoundException("Movie with the id: %d not found".formatted(movieId));
+        }
+
+        // Get favorite movies
+        Set<Movie> favoriteMovies = user.getFavoriteMovies();
+
+        // Remove the movie from favorites
+        boolean removed = favoriteMovies.removeIf(movie -> movie.getId().equals(movieId));
+
+        if (!removed) {
+            return new ResponseEntity<>("Movie was not in favorites", HttpStatus.NOT_FOUND);
+        }
+
+        // Update user's favorites
+        user.setFavoriteMovies(favoriteMovies);
+        usersRepo.save(user);
+
+        return new ResponseEntity<>("Movie removed from favorites successfully", HttpStatus.OK);
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseEntity<Boolean> checkIfFavorite(Long userId, Long movieId){
+        Optional<Users> user = usersRepo.findById(userId);
+
+        if (user.isEmpty()) {
+            throw new UserNotFoundException("The user with the id " + userId + " doesn't exists");
+        }
+
+        Set<Movie> favoriteMovies = user.get().getFavoriteMovies();
+
+        // Check if the movie with the given movieId is in favorites
+        boolean isFavorite = favoriteMovies.stream()
+                .anyMatch(movie -> movie.getId().equals(movieId));
+
+        return new ResponseEntity<>(isFavorite, HttpStatus.OK);
     }
 
     public ResponseEntity<AuthResponseDto> refreshAccessToken(RefreshTokenDto refreshTokenDto) {

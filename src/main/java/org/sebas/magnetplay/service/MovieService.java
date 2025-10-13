@@ -134,16 +134,15 @@ public class MovieService {
         TorrentDataDto resultDto = objectMapper.readValue(result, TorrentDataDto.class);
         List<TorrentMovieDto> torrentMovieDtos = resultDto.getData();
 
-        // Step 1: Filter and clean torrents (only 1080p with valid titles)
+        // Filter and deduplicate by title (name + year only)
         Map<String, TorrentMovieDto> uniqueTorrents = new LinkedHashMap<>();
 
         for (TorrentMovieDto torrent : torrentMovieDtos) {
-            // Skip if not 1080p
-            if (!is1080pTorrent(torrent)) {
+            // Skip if no magnet
+            if (torrent.getMagnet() == null || torrent.getMagnet().trim().isEmpty()) {
                 continue;
             }
-
-            // Parse and clean title
+            // Parse and clean title (only name + year, no resolution)
             String parsedTitle = parseMovieTitle(torrent.getName());
             if (parsedTitle == null || parsedTitle.trim().isEmpty()) {
                 continue;
@@ -152,42 +151,36 @@ public class MovieService {
             parsedTitle = parsedTitle.trim();
             torrent.setName(parsedTitle);
 
-            // Keep only one torrent per title (best quality)
+            // Keep only one torrent per title (best quality by score)
             if (!uniqueTorrents.containsKey(parsedTitle)) {
                 uniqueTorrents.put(parsedTitle, torrent);
             } else {
-                // Compare and keep better quality
+                // Compare scores and keep the better one
                 TorrentMovieDto existing = uniqueTorrents.get(parsedTitle);
                 int newScore = calculateTorrentQualityScore(torrent);
                 int existingScore = calculateTorrentQualityScore(existing);
 
                 if (newScore > existingScore) {
                     uniqueTorrents.put(parsedTitle, torrent);
-                } else if (newScore == existingScore && hasBetterPoster(torrent, existing)) {
-                    uniqueTorrents.put(parsedTitle, torrent);
                 }
             }
         }
 
-        // Step 2: Save to database
+        // Save to database
         List<Movie> savedMovies = new ArrayList<>();
-        int newMovies = 0;
-        int existingMovies = 0;
 
         for (TorrentMovieDto torrent : uniqueTorrents.values()) {
             try {
-                // Check if already exists in DB
+                // Check if already exists in DB (case-insensitive)
                 Optional<Movie> existingMovie = repo.findFirstByNameIgnoreCase(torrent.getName());
 
                 if (existingMovie.isPresent()) {
                     savedMovies.add(existingMovie.get());
-                    existingMovies++;
                 } else {
                     // Save new movie
                     Movie newMovie = movieMapper.fromTorrentToMovie(torrent);
                     Movie saved = repo.save(newMovie);
                     savedMovies.add(saved);
-                    newMovies++;
                 }
             } catch (Exception e) {
                 System.err.println("❌ Error saving movie: " + torrent.getName() + " - " + e.getMessage());
@@ -198,16 +191,7 @@ public class MovieService {
     }
 
     /**
-     * Check if torrent has a better poster
-     */
-    private boolean hasBetterPoster(TorrentMovieDto newTorrent, TorrentMovieDto existing) {
-        boolean newHasPoster = newTorrent.getPoster() != null && !newTorrent.getPoster().trim().isEmpty();
-        boolean existingHasPoster = existing.getPoster() != null && !existing.getPoster().trim().isEmpty();
-        return newHasPoster && !existingHasPoster;
-    }
-
-    /**
-     * Calculate quality score based on audio/subtitle availability
+     * Calculate quality score based on audio/subtitle availability and poster
      */
     private int calculateTorrentQualityScore(TorrentMovieDto torrent) {
         int score = 0;
@@ -219,6 +203,11 @@ public class MovieService {
         }
 
         String searchText = name + " " + filesContent;
+
+        // Poster (highest priority)
+        if (torrent.getPoster() != null && !torrent.getPoster().trim().isEmpty()) {
+            score += 20;
+        }
 
         // Audio codecs/formats
         if (searchText.contains(".ac3") || searchText.contains(".aac") ||
@@ -282,7 +271,11 @@ public class MovieService {
         ParseMovie info = new ParseMovie();
 
         // Remove parentheses and common special characters
-        String cleanTitle = title.replaceAll("[()\\[\\]{}]", " ").replaceAll("[.]", " ").replaceAll("_", " ").replaceAll("\\s+", " ").trim();
+        String cleanTitle = title.replaceAll("[()\\[\\]{}]", " ")
+                                 .replaceAll("[.]", " ")
+                                 .replaceAll("_", " ")
+                                 .replaceAll("\\s+", " ")
+                                 .trim();
 
         // Extract year
         Pattern yearPattern = Pattern.compile("(19|20)\\d{2}");
@@ -294,15 +287,12 @@ public class MovieService {
             info.name = cleanTitle.trim();
             info.year = "";
         }
-        Pattern resPattern = Pattern.compile("(2160p|1080p|720p|480p)");
-        Matcher resMatcher = resPattern.matcher(cleanTitle);
-        if (resMatcher.find()) {
-            info.resolution = resMatcher.group();
-        } else {
-            info.resolution = "";
+
+        // Return ONLY name and year (no resolution to avoid duplicates)
+        if (info.year.isEmpty()) {
+            return info.name;
         }
-        // Unify format for comparison
-        return String.format("%s %s %s", info.name, info.year, info.resolution).replaceAll("\\s+", " ").trim();
+        return String.format("%s %s", info.name, info.year).replaceAll("\\s+", " ").trim();
     }
 
 
