@@ -70,5 +70,10 @@ public class MovieController {
         return service.deleteMovie(movieId);
     }
 
+    @GetMapping("/movies/search")
+    public ResponseEntity<?> searchMovie(@RequestParam("name") String movieName){
+        return service.searchMovie(movieName);
+    }
+
 }
 

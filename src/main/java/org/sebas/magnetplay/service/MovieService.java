@@ -326,4 +326,17 @@ public class MovieService {
         Matcher matcher = resPattern.matcher(title);
         return matcher.find();
     }
+
+
+    public ResponseEntity<?> searchMovie(String movieName) {
+        try {
+            System.out.println("getting: " + movieName);
+            String result = restTemplate.getForObject("%s/api/v1/search?site=kickass&query=%s&limit=20".formatted(url, movieName), String.class);
+            List<MovieDto> finalResult = saveTorrentInDatabase(result);
+            return new ResponseEntity<>(finalResult, HttpStatus.OK);
+        } catch (Exception e) {
+            System.err.println("Error on getTrendingMovies: " + e.getMessage());
+            throw new RestClientException("Error obtaining the movie " + movieName, e);
+        }
+    }
 }

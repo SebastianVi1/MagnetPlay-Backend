@@ -141,7 +141,6 @@ public class UserService {
 
     }
 
-
     @Transactional
     public ResponseEntity<?> addMovieToFavorites(Long movieId, Long userId ) {
         Optional<Movie> movieOptional = movieRepo.findById(movieId);
