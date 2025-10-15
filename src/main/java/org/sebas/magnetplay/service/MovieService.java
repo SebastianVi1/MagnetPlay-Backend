@@ -151,6 +151,11 @@ public class MovieService {
                 continue;
             }
 
+            // skip if no poster
+            if (torrent.getPoster() == null || torrent.getPoster().isEmpty()){
+                continue;
+            }
+
             parsedTitle = parsedTitle.trim();
 
             // Normalize title for consistent comparison (lowercase, single spaces)
