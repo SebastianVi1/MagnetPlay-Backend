@@ -49,6 +49,7 @@ src/
 - **Exception Handling:** Custom exceptions and global error handler for robust API responses.
 - **Data Mapping:** DTOs and mappers for clean separation between API and persistence layers.
 - **Testing:** Unit and integration tests for controllers and services.
+- **Swagger/OpenAPI Documentation:** Interactive API docs available via Swagger UI (`/swagger-ui.html`).
 
 ## Getting Started
 
@@ -93,6 +94,11 @@ Below are the most important endpoints, grouped by category for clarity:
 | GET    | /api/favorites                   | List user's favorite movies        | Yes          |
 | POST   | /api/favorites/{movieId}         | Add movie to favorites             | Yes          |
 | DELETE | /api/favorites/{movieId}         | Remove movie from favorites        | Yes          |
+
+### Documentation Endpoint
+| Method | Endpoint             | Description                       | Auth Required |
+|--------|----------------------|-----------------------------------|--------------|
+| GET    | /swagger-ui.html     | Swagger UI interactive API docs   | No           |
 
 ### Error Handling
 All endpoints return structured error responses using `ErrorResponseDto` for validation errors, authentication failures, and resource not found exceptions.

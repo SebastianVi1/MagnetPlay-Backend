@@ -47,7 +47,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll()
                         .requestMatchers("/api/auth/refresh").permitAll()
-                        .requestMatchers("/api/movies/**").permitAll()
+                        .requestMatchers("/api/movies/recent").permitAll()
+                        .requestMatchers("/api/movies/trending").permitAll()
+                        .requestMatchers("/api/movies").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Permitir preflight requests
                         .anyRequest().authenticated())
                 .formLogin(form -> form.disable())
