@@ -1,0 +1,25 @@
+FROM maven:3.9.11-eclipse-temurin-21 AS builder
+WORKDIR /app
+
+# Improve cache: copy pom and wrapper first to cache dependencies
+COPY pom.xml mvnw mvnw.cmd ./
+
+RUN mvn -B dependency:go-offline --no-transfer-progress
+
+# Copy sources and build (skip tests for faster images)
+COPY src ./src
+RUN mvn -B -DskipTests package --no-transfer-progress
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+
+# Copy the built jar from the builder stage (uses glob to match generated name)
+ARG JAR_FILE=target/*.jar
+COPY --from=builder /app/${JAR_FILE} app.jar
+
+EXPOSE 8080
+
+# Run with production profile by default; credentials come from docker-compose env
+ENV SPRING_PROFILES_ACTIVE=production
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
