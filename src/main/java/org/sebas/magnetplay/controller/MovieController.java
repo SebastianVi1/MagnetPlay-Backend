@@ -14,7 +14,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin("http://frontend:5173")
 public class MovieController {
 
 

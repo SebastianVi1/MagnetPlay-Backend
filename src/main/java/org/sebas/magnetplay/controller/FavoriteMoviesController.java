@@ -13,7 +13,6 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin("http://frontend:5173")
 public class FavoriteMoviesController {
 
     private final UserService userService;
