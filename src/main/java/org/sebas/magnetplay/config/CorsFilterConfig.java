@@ -10,7 +10,7 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 public class CorsFilterConfig {
 
-    @Value("${FRONTEND_URL:${app.frontend.url:}}")
+    @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
     @Bean
@@ -19,14 +19,11 @@ public class CorsFilterConfig {
         config.setAllowCredentials(true);
 
         if (frontendUrl != null && !frontendUrl.isBlank()) {
-            // Remove :80 port and trailing slashes
             String origin = frontendUrl.trim().replaceAll("/+$", "").replaceAll(":80$", "");
             config.addAllowedOrigin(origin);
         } else {
-            // Fallback for development
             config.addAllowedOrigin("http://localhost:5173");
         }
-
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.addExposedHeader("Authorization");

@@ -1,5 +1,4 @@
 package org.sebas.magnetplay.service;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.sebas.magnetplay.dto.MovieDto;
@@ -11,7 +10,6 @@ import org.sebas.magnetplay.mapper.MovieMapper;
 import org.sebas.magnetplay.model.Movie;
 import org.sebas.magnetplay.model.ParseMovie;
 import org.sebas.magnetplay.repo.MovieRepo;
-import org.sebas.magnetplay.repo.UsersRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -27,8 +25,8 @@ import java.util.regex.Pattern;
 public class MovieService {
 
     private final ObjectMapper objectMapper;
-    private MovieMapper movieMapper;
-    private MovieRepo repo;
+    private final MovieMapper movieMapper;
+    private final MovieRepo repo;
 
 
     private final String url = "http://torrent-api:8009";
@@ -38,7 +36,7 @@ public class MovieService {
 
 
     @Autowired
-    public MovieService(MovieRepo repo, MovieMapper movieMapper, UsersRepo usersRepo, ObjectMapper objectMapper){
+    public MovieService(MovieRepo repo, MovieMapper movieMapper, ObjectMapper objectMapper){
         this.repo = repo;
         this.movieMapper = movieMapper;
         this.objectMapper = objectMapper;
@@ -59,7 +57,7 @@ public class MovieService {
         if (movie.isEmpty()){
             throw new MovieNotFoundException("Movie with the id: %d not found".formatted(id));
         }
-        return new ResponseEntity<MovieDto>(movieMapper.toDto(movie.get()), HttpStatus.OK);
+        return new ResponseEntity<>(movieMapper.toDto(movie.get()), HttpStatus.OK);
     }
 
     public ResponseEntity<MovieDto> createMovie(MovieDto movieDto) throws InvalidDataException {
@@ -95,19 +93,6 @@ public class MovieService {
     }
 
 
-    public ResponseEntity<?> createTorrentMovie(TorrentMovieDto torrentMovie){
-        String parsedTitle = parseMovieTitle(torrentMovie.getName());
-        torrentMovie.setName(parsedTitle);
-        if (!is1080pTorrent(torrentMovie)){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-        Movie movieEntity = movieMapper.fromTorrentToMovie(torrentMovie);
-        Movie newMovie = repo.save(movieEntity);
-        return new ResponseEntity<>(newMovie, HttpStatus.CREATED);
-
-    }
-
-
     public ResponseEntity<List<MovieDto>> getRecentMovies() throws JsonProcessingException {
         try {
             String result = restTemplate.getForObject("%s/api/v1/recent?site=%s&limit=100&category=%s".formatted(url, site, category ), String.class);
@@ -119,7 +104,7 @@ public class MovieService {
         }
     }
 
-    public ResponseEntity<List<MovieDto>> getTrendingMovies() throws JsonProcessingException {
+    public ResponseEntity<List<MovieDto>> getTrendingMovies() {
         try {
             String result = restTemplate.getForObject("%s/api/v1/trending?site=%s&limit=100&category=%s".formatted(url, site, category ), String.class);
             List<MovieDto> finalResult = saveTorrentInDatabase(result);
@@ -131,87 +116,89 @@ public class MovieService {
     }
 
     public List<MovieDto> saveTorrentInDatabase(String result) throws JsonProcessingException {
-        TorrentDataDto resultDto = objectMapper.readValue(result, TorrentDataDto.class);
-        List<TorrentMovieDto> torrentMovieDtos = resultDto.getData();
+        TorrentDataDto dataDto = objectMapper.readValue(result, TorrentDataDto.class);
+        List<TorrentMovieDto> torrents = dataDto != null && dataDto.getData() != null ? dataDto.getData() : Collections.emptyList();
 
-        System.out.println("📥 Received " + torrentMovieDtos.size() + " torrents from API");
+        // Simple counters for quick troubleshooting
+        int total = torrents.size();
+        int skippedNoMagnet = 0;
+        int skippedNoTitle = 0;
 
-        // Step 1: Filter and deduplicate by title (name + year only)
-        Map<String, TorrentMovieDto> uniqueTorrents = new LinkedHashMap<>();
+        Map<String, TorrentMovieDto> bestByTitle = new LinkedHashMap<>();
 
-        for (TorrentMovieDto torrent : torrentMovieDtos) {
-            // Skip if no magnet (essential field)
-            if (torrent.getMagnet() == null || torrent.getMagnet().trim().isEmpty()) {
+        Pattern res1080 = Pattern.compile("1080p", Pattern.CASE_INSENSITIVE);
+
+        for (TorrentMovieDto t : torrents) {
+            if (t == null) continue;
+
+            // ensure magnet exists (or is present in url)
+            if ((t.getMagnet() == null || t.getMagnet().trim().isEmpty()) && (t.getUrl() == null || !t.getUrl().toLowerCase().contains("magnet:"))) {
+                skippedNoMagnet++;
                 continue;
             }
-
-            // Parse and clean title (only name + year, no resolution)
-            String parsedTitle = parseMovieTitle(torrent.getName());
-            if (parsedTitle == null || parsedTitle.trim().isEmpty()) {
-                continue;
+            if ((t.getMagnet() == null || t.getMagnet().trim().isEmpty()) && t.getUrl() != null && t.getUrl().toLowerCase().contains("magnet:")) {
+                t.setMagnet(t.getUrl());
             }
 
-            // skip if no poster
-            if (torrent.getPoster() == null || torrent.getPoster().isEmpty()){
-                continue;
-            }
-
-            parsedTitle = parsedTitle.trim();
-
-            // Normalize title for consistent comparison (lowercase, single spaces)
-            String normalizedTitle = parsedTitle.toLowerCase().replaceAll("\\s+", " ");
-            torrent.setName(parsedTitle); // Keep original case for display
-
-            // Keep only one torrent per normalized title (best quality by score)
-            if (!uniqueTorrents.containsKey(normalizedTitle)) {
-                uniqueTorrents.put(normalizedTitle, torrent);
-            } else {
-                // Compare scores and keep the better one
-                TorrentMovieDto existing = uniqueTorrents.get(normalizedTitle);
-                int newScore = calculateTorrentQualityScore(torrent);
-                int existingScore = calculateTorrentQualityScore(existing);
-
-                if (newScore > existingScore) {
-                    uniqueTorrents.put(normalizedTitle, torrent);
+            // build candidate title
+            String candidate = t.getName();
+            if (candidate == null || candidate.trim().isEmpty()) {
+                if (t.getUrl() != null && !t.getUrl().trim().isEmpty()) {
+                    String url = t.getUrl();
+                    int idx = Math.max(url.lastIndexOf('/'), url.lastIndexOf('='));
+                    candidate = idx > -1 && idx + 1 < url.length() ? url.substring(idx + 1) : url;
                 }
+            }
+            if ((candidate == null || candidate.trim().isEmpty()) && t.getDescription() != null) {
+                candidate = t.getDescription();
+            }
+
+            // REQUIRE: only keep torrents that are 1080p (check before parsing)
+            if (candidate == null || !res1080.matcher(candidate).find()) {
+                skippedNoTitle++;
+                continue;
+            }
+
+            String parsed = parseMovieTitle(candidate);
+            if (parsed == null || parsed.trim().isEmpty()) {
+                skippedNoTitle++;
+                continue;
+            }
+
+            String normalized = parsed.trim().toLowerCase().replaceAll("\\s+", " ");
+            t.setName(parsed.trim());
+
+            // fallback: if poster missing, use first screenshot available
+            if ((t.getPoster() == null || t.getPoster().trim().isEmpty()) && t.getScreenshot() != null && !t.getScreenshot().isEmpty()) {
+                t.setPoster(t.getScreenshot().get(0));
+            }
+
+            TorrentMovieDto current = bestByTitle.get(normalized);
+            if (current == null || calculateTorrentQualityScore(t) > calculateTorrentQualityScore(current)) {
+                bestByTitle.put(normalized, t);
             }
         }
 
+        System.out.println("saveTorrentInDatabase: total=" + total + ", kept=" + bestByTitle.size() + ", skippedNoMagnet=" + skippedNoMagnet + ", skippedNoTitle=" + skippedNoTitle);
 
-        // Step 2: Save to database (check both by name AND hash to avoid all duplicates)
         List<Movie> savedMovies = new ArrayList<>();
-        int newCount = 0;
-        int existingCount = 0;
-        int skippedCount = 0;
-
-        for (TorrentMovieDto torrent : uniqueTorrents.values()) {
+        for (TorrentMovieDto t : bestByTitle.values()) {
             try {
-                String movieName = torrent.getName();
-                String movieHash = torrent.getHash();
+                String name = t.getName();
+                Optional<Movie> byName = repo.findFirstByNameIgnoreCase(name);
+                Optional<Movie> byHash = t.getHash() != null ? repo.findByHash(t.getHash()) : Optional.empty();
 
-                // Check if already exists by name (case-insensitive)
-                Optional<Movie> existingByName = repo.findFirstByNameIgnoreCase(movieName);
-
-                // Check if already exists by hash
-                Optional<Movie> existingByHash = movieHash != null ? repo.findByHash(movieHash) : Optional.empty();
-
-                // If movie exists by name OR hash, use the existing one
-                if (existingByName.isPresent()) {
-                    savedMovies.add(existingByName.get());
-                    existingCount++;
-                } else if (existingByHash.isPresent()) {
-                    savedMovies.add(existingByHash.get());
-                    existingCount++;
+                if (byName.isPresent()) {
+                    savedMovies.add(byName.get());
+                } else if (byHash.isPresent()) {
+                    savedMovies.add(byHash.get());
                 } else {
-                    // New movie - save it
-                    Movie newMovie = movieMapper.fromTorrentToMovie(torrent);
-                    Movie saved = repo.save(newMovie);
+                    Movie toSave = movieMapper.fromTorrentToMovie(t);
+                    Movie saved = repo.save(toSave);
                     savedMovies.add(saved);
-                    newCount++;
                 }
             } catch (Exception e) {
-                System.err.println("❌ Error saving movie: " + torrent.getName() + " - " + e.getMessage());
-                skippedCount++;
+                System.err.println("Error saving movie: " + (t != null ? t.getName() : "unknown") + " -> " + e.getMessage());
             }
         }
 
@@ -269,33 +256,8 @@ public class MovieService {
         return score;
     }
 
-    public ResponseEntity<Map<String,List<MovieDto>>> getOrderedByCategory(){
-        List<MovieDto> movieList = movieMapper.toDtoList(repo.findAll());
-
-        HashSet<String> categories = new HashSet<>();
-        HashMap<String, List<MovieDto>> categoryMap = new HashMap<>();
-
-        for (MovieDto movie : movieList){
-            if (movie.getCategory() == null){
-                System.out.println(movie.getCategory());
-                continue;
-            }
-            categories.add(movie.getCategory());
-        }
-        for (String category: categories){
-            categoryMap.put(category, new ArrayList<>());
-        }
-       for (MovieDto movie : movieList){
-           for (String category : categoryMap.keySet()){
-               if( category.equals(movie.getCategory())){
-                   categoryMap.get(category).add(movie);
-               }
-           }
-       }
-       return new ResponseEntity<>(categoryMap, HttpStatus.OK);
-    }
-
     public String parseMovieTitle(String title){
+        if (title == null) return "";
         ParseMovie info = new ParseMovie();
 
         // Remove parentheses and common special characters
@@ -324,19 +286,10 @@ public class MovieService {
     }
 
 
-    public boolean is1080pTorrent(TorrentMovieDto torrentMovieDto) {
-        if (torrentMovieDto == null || torrentMovieDto.getName() == null) return false;
-        String title = torrentMovieDto.getName();
-        Pattern resPattern = Pattern.compile("1080p");
-        Matcher matcher = resPattern.matcher(title);
-        return matcher.find();
-    }
-
-
     public ResponseEntity<?> searchMovie(String movieName) {
         try {
             System.out.println("getting: " + movieName);
-            String result = restTemplate.getForObject("%s/api/v1/search?site=kickass&query=%s&limit=20".formatted(url, movieName), String.class);
+            String result = restTemplate.getForObject("%s/api/v1/search?site=piratebay&query=%s&limit=20".formatted(url, movieName), String.class);
             List<MovieDto> finalResult = saveTorrentInDatabase(result);
             return new ResponseEntity<>(finalResult, HttpStatus.OK);
         } catch (Exception e) {

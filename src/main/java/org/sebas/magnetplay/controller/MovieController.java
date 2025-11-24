@@ -29,10 +29,6 @@ public class MovieController {
         return service.getMovies();
     }
 
-    @GetMapping("/movies/categories")
-    public ResponseEntity<Map<String,List<MovieDto>>> getMoviesByCategory(){
-        return service.getOrderedByCategory();
-    }
 
     @GetMapping("/movies/recent")
     public ResponseEntity<List<MovieDto>> getRecentMovies() throws JsonProcessingException {
