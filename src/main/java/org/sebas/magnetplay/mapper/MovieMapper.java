@@ -4,6 +4,7 @@ import org.sebas.magnetplay.dto.MovieDto;
 import org.sebas.magnetplay.dto.TorrentDataDto;
 import org.sebas.magnetplay.dto.TorrentMovieDto;
 import org.sebas.magnetplay.model.Movie;
+import org.sebas.magnetplay.service.TmdbService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,7 +13,13 @@ import java.util.List;
 @Component
 public class MovieMapper {
 
-    //Convert entity to Dto for public use
+    private TmdbService tmdbService;
+
+    @Autowired
+    public MovieMapper(TmdbService tmdbService) {
+        this.tmdbService = tmdbService;
+    }
+
     public MovieDto toDto(Movie model){
         MovieDto movieDto = new MovieDto();
         movieDto.setId(model.getId());
@@ -25,10 +32,23 @@ public class MovieMapper {
         movieDto.setPosterUri(model.getPoster());
         movieDto.setCategory(model.getCategory());
         movieDto.setGenres(model.getGenres());
+
+        movieDto.setTmdbId(model.getTmdbId());
+        movieDto.setTmdbRating(model.getTmdbRating());
+        movieDto.setTmdbOverview(model.getTmdbOverview());
+        movieDto.setReleaseDate(model.getReleaseDate());
+        movieDto.setRuntime(model.getRuntime());
+
+        if (model.getTmdbPosterPath() != null && !model.getTmdbPosterPath().isBlank()) {
+            movieDto.setTmdbPosterUrl(tmdbService.buildPosterUrl(model.getTmdbPosterPath()));
+        }
+        if (model.getTmdbBackdropPath() != null && !model.getTmdbBackdropPath().isBlank()) {
+            movieDto.setTmdbBackdropUrl(tmdbService.buildBackdropUrl(model.getTmdbBackdropPath()));
+        }
+
         return movieDto;
     }
 
-    //Convert dto to entity
     public Movie toModel(MovieDto dto){
 
         Movie model = new Movie();
@@ -43,12 +63,17 @@ public class MovieMapper {
         model.setCategory(dto.getCategory());
         model.setGenres(dto.getGenres());
 
+        model.setTmdbId(dto.getTmdbId());
+        model.setTmdbRating(dto.getTmdbRating());
+        model.setTmdbOverview(dto.getTmdbOverview());
+        model.setReleaseDate(dto.getReleaseDate());
+        model.setRuntime(dto.getRuntime());
+
         return model;
     }
 
-    // Return a list with MovieDto
     public List<MovieDto> toDtoList(List<Movie> list){
-        return list.stream().map(this::toDto).toList(); // convert all entities to dot
+        return list.stream().map(this::toDto).toList();
     }
 
 
@@ -80,7 +105,6 @@ public class MovieMapper {
             dto.setScreenshot(torrent.getScreenshot());
             dto.setDescription(torrent.getDescription());
             dto.setGenres(torrent.getGenres());
-            // Set other fields if needed
             return dto;
         }).toList();
     }

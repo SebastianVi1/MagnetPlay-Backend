@@ -17,4 +17,12 @@ public class MovieDto {
     private String hash;
     private List<String> genres;
 
+    private String tmdbPosterUrl;
+    private String tmdbBackdropUrl;
+    private Double tmdbRating;
+    private String tmdbOverview;
+    private String releaseDate;
+    private Integer runtime;
+    private Integer tmdbId;
+
 }

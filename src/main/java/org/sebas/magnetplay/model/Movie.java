@@ -50,6 +50,17 @@ public class Movie {
 
     private List<String> genres;
 
+    private String tmdbPosterPath;
+    private String tmdbBackdropPath;
+    private Double tmdbRating;
+
+    @Column(columnDefinition = "TEXT")
+    private String tmdbOverview;
+
+    private String releaseDate;
+    private Integer runtime;
+    private Integer tmdbId;
+
 }
 
 

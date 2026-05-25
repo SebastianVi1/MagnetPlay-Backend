@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.validation.Valid;
 import org.sebas.magnetplay.dto.MovieDto;
 import org.sebas.magnetplay.service.MovieService;
+import org.sebas.magnetplay.service.TmdbService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,10 +19,12 @@ public class MovieController {
 
 
     private final MovieService service;
+    private final TmdbService tmdbService;
 
     @Autowired
-    public MovieController(MovieService movieService){
+    public MovieController(MovieService movieService, TmdbService tmdbService){
         this.service = movieService;
+        this.tmdbService = tmdbService;
     }
 
     @GetMapping("/movies")
@@ -68,6 +71,16 @@ public class MovieController {
     @GetMapping("/movies/search")
     public ResponseEntity<?> searchMovie(@RequestParam("name") String movieName){
         return service.searchMovie(movieName);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/movies/backfill")
+    public ResponseEntity<Map<String, Object>> backfillTmbd() {
+        int updated = tmdbService.backfillAll();
+        return ResponseEntity.ok(Map.of(
+            "message", "TMDB backfill completed",
+            "updated", updated
+        ));
     }
 
 }

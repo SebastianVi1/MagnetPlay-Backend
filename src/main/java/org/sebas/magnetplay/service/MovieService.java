@@ -27,19 +27,21 @@ public class MovieService {
     private final ObjectMapper objectMapper;
     private final MovieMapper movieMapper;
     private final MovieRepo repo;
+    private final TmdbService tmdbService;
 
 
     private final String url = "http://torrent-api:8009";
     private final String category = "movies";
-    private final String site = "1337x";
+    private final String site = "glodls";
     private final RestTemplate restTemplate;
 
 
     @Autowired
-    public MovieService(MovieRepo repo, MovieMapper movieMapper, ObjectMapper objectMapper){
+    public MovieService(MovieRepo repo, MovieMapper movieMapper, ObjectMapper objectMapper, TmdbService tmdbService){
         this.repo = repo;
         this.movieMapper = movieMapper;
         this.objectMapper = objectMapper;
+        this.tmdbService = tmdbService;
 
         restTemplate = new RestTemplate();
     }
@@ -57,7 +59,12 @@ public class MovieService {
         if (movie.isEmpty()){
             throw new MovieNotFoundException("Movie with the id: %d not found".formatted(id));
         }
-        return new ResponseEntity<>(movieMapper.toDto(movie.get()), HttpStatus.OK);
+        Movie found = movie.get();
+        if (found.getTmdbId() == null) {
+            tmdbService.enrichMovie(found);
+            found = repo.findById(id).orElse(found);
+        }
+        return new ResponseEntity<>(movieMapper.toDto(found), HttpStatus.OK);
     }
 
     public ResponseEntity<MovieDto> createMovie(MovieDto movieDto) throws InvalidDataException {
@@ -95,7 +102,11 @@ public class MovieService {
 
     public ResponseEntity<List<MovieDto>> getRecentMovies() throws JsonProcessingException {
         try {
-            String result = restTemplate.getForObject("%s/api/v1/recent?site=%s&limit=100&category=%s".formatted(url, site, category ), String.class);
+            String url = "%s/api/v1/recent?site=%s&limit=100".formatted(this.url, site);
+            if (!site.equals("glodls") && !site.equals("piratebay")) {
+                url += "&category=" + category;
+            }
+            String result = restTemplate.getForObject(url, String.class);
             List<MovieDto> finalResult = saveTorrentInDatabase(result);
             return new ResponseEntity<>(finalResult, HttpStatus.OK);
         } catch (RestClientException e) {
@@ -106,7 +117,11 @@ public class MovieService {
 
     public ResponseEntity<List<MovieDto>> getTrendingMovies() {
         try {
-            String result = restTemplate.getForObject("%s/api/v1/trending?site=%s&limit=100&category=%s".formatted(url, site, category ), String.class);
+            String url = "%s/api/v1/trending?site=%s&limit=100".formatted(this.url, site);
+            if (!site.equals("glodls") && !site.equals("piratebay")) {
+                url += "&category=" + category;
+            }
+            String result = restTemplate.getForObject(url, String.class);
             List<MovieDto> finalResult = saveTorrentInDatabase(result);
             return new ResponseEntity<>(finalResult, HttpStatus.OK);
         } catch (Exception e) {
@@ -202,6 +217,12 @@ public class MovieService {
             }
         }
 
+        for (Movie saved : savedMovies) {
+            if (saved.getTmdbId() == null) {
+                tmdbService.enrichMovie(saved);
+            }
+        }
+
         return movieMapper.toDtoList(savedMovies);
     }
 
@@ -289,7 +310,7 @@ public class MovieService {
     public ResponseEntity<?> searchMovie(String movieName) {
         try {
             System.out.println("getting: " + movieName);
-            String result = restTemplate.getForObject("%s/api/v1/search?site=piratebay&query=%s&limit=20".formatted(url, movieName), String.class);
+            String result = restTemplate.getForObject("%s/api/v1/search?site=%s&query=%s&limit=20".formatted(url, site, movieName), String.class);
             List<MovieDto> finalResult = saveTorrentInDatabase(result);
             return new ResponseEntity<>(finalResult, HttpStatus.OK);
         } catch (Exception e) {

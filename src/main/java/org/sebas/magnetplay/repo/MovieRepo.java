@@ -10,4 +10,5 @@ public interface MovieRepo extends JpaRepository<Movie, Long> {
     Optional<Movie> findByHash(String hash);
     List<Movie> findByNameIgnoreCase(String name);
     Optional<Movie> findFirstByNameIgnoreCase(String name);
+    List<Movie> findByTmdbIdIsNull();
 }
